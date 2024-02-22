@@ -1,5 +1,4 @@
 from Bio.PDB import *
-import active_site
 
 
 parser = PDBParser(PERMISSIVE = True, QUIET = True)
@@ -19,19 +18,19 @@ for residue in data.get_residues():
             selected_atom = atom  # Change this to select a different atom
 
             # Find all atoms within 10A of the selected atom
-            nearby_atoms = ns.search(selected_atom.coord, 10.0)  # Change the radius if needed
+            nearby_atoms = ns.search(selected_atom.coord, 2)  # Change the radius if needed
 
             # Check if any nearby atom is a ligand
             is_near_ligand = False
             for nearby_atom in nearby_atoms:
                 nearby_residue = nearby_atom.get_parent()
-                if nearby_residue.get_resname() != 'HOH' and nearby_residue.get_resname() != 'VWW':  # Exclude nearby water residues and specify the ligand name
+                if nearby_residue.get_resname() == 'VWW':  # Exclude nearby water residues and specify the ligand name
                     is_near_ligand = True
                     break
 
             # Print "Yes" or "No" based on whether the atom is near a ligand
             if is_near_ligand:
-                print("Yes")
+                continue
             else:
                 print("No")
 
@@ -53,21 +52,67 @@ for residue in data.get_residues():
 
 
 
+ligand_names
+
 # Iterate over the atoms in the structure
-nearby_protein_atoms = []
+ligand_binding_site_atoms = []
 
-for atom in atoms:
-    residue = atom.get_parent()
+
+
+
+
+ligand_binding_site_atoms = []
+# Iterate over the residues in the structure
+for residue in data.get_residues():
     residue_name = residue.get_resname()
-    # Check if the atom belongs to a ligand
+    # Check if the residue is a ligand
     if residue_name in ligand_names:
-        # Find all atoms within 10A of the ligand atom
-        nearby = ns.search(atom.coord, 10.0)  # Change the radius if needed
-        # Filter out atoms that belong to the protein
-        nearby_protein = [a for a in nearby if a.get_parent().get_resname() in standard_residues]
-        nearby_protein_atoms.extend(nearby_protein)
+        # Iterate over the atoms in the ligand
+        for atom in residue.get_atoms():
+            # find all atoms within 5A of the ligand atom
+            nearby = ns.search(atom.coord, 5)
+            # filter atoms that belong to the protein
+            nearby_protein_atoms = [a for a in nearby if a.get_parent().get_resname() in standard_residues]
+            ligand_binding_site_atoms.extend([(nearby_atom.get_name(), nearby_atom.coord, nearby_atom.get_parent().get_resname()) for nearby_atom in nearby_protein_atoms])
 
-# Print the nearby protein atoms
-for atom in nearby_protein_atoms:
-    print(f"{atom.get_parent().get_resname()} {atom.get_name()} {atom.get_coord()}")
+
+
+
+# Create a new PDB structure
+structure = Structure.Structure('Ligand Binding Site')
+
+# Create a new model
+model = Model.Model(0)
+
+# Add the model to the structure
+structure.add(model)
+
+# Create a new chain
+chain = Chain.Chain('A')
+
+# Add the chain to the model
+model.add(chain)
+
+
+
+# Iterate over the atoms in the ligand binding site and create a structure
+for i, (atom_name, atom_coord, residue_name) in enumerate(ligand_binding_site_atoms):
+    # Create a new residue
+    residue = Residue.Residue((' ', i+1, ' '), residue_name, ' ')
+    # Add the residue to the chain
+    chain.add(residue)
+    
+    # Create a new Atom object
+    atom = Atom.Atom(atom_name, atom_coord, 0.0, 1.0, ' ', atom_name, i)
+    # Add the atom to the residue
+    residue.add(atom)
+
+# Create a PDBIO object
+pdb_io = PDBIO()
+# Set the structure to be written
+pdb_io.set_structure(structure)
+# Save the structure to a PDB file
+pdb_io.save('ligand_binding_site.pdb')
+
+
 
