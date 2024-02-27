@@ -10,57 +10,26 @@ atoms = list(data.get_atoms())
 # Create a NeighborSearch object
 ns = NeighborSearch(atoms)
 
-# Select an atom
-
-for residue in data.get_residues():
-    if residue.get_id()[0] == ' ' and residue.get_resname() != 'HOH':  # Exclude water residues
-        for atom in residue.get_atoms():
-            selected_atom = atom  # Change this to select a different atom
-
-            # Find all atoms within 10A of the selected atom
-            nearby_atoms = ns.search(selected_atom.coord, 2)  # Change the radius if needed
-
-            # Check if any nearby atom is a ligand
-            is_near_ligand = False
-            for nearby_atom in nearby_atoms:
-                nearby_residue = nearby_atom.get_parent()
-                if nearby_residue.get_resname() == 'VWW':  # Exclude nearby water residues and specify the ligand name
-                    is_near_ligand = True
-                    break
-
-            # Print "Yes" or "No" based on whether the atom is near a ligand
-            if is_near_ligand:
-                continue
-            else:
-                print("No")
-
-
-
-
 # List of standard amino acids
 standard_residues = ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
 
+
 # Initialize an empty list to store the ligand names
-ligand_names = []
 
-# Iterate over the residues in the structure
+
+ligand_residues = []
+
 for residue in data.get_residues():
-    residue_name = residue.get_resname()
-    # Check if the residue is not a standard amino acid or water
-    if residue_name not in standard_residues and residue_name != 'HOH':
-        ligand_names.append(residue_name)
+    resname = residue.get_resname()
+    if resname not in standard_residues and resname != 'HOH':
+        ligand_residues.append(resname)
+
+print(ligand_residues)
 
 
-
-ligand_names
-
-# Iterate over the atoms in the structure
-ligand_binding_site_atoms = []
-
-
-
-
-
+#############
+## ligand binding site
+#############
 ligand_binding_site_atoms = []
 # Iterate over the residues in the structure
 for residue in data.get_residues():
@@ -69,11 +38,65 @@ for residue in data.get_residues():
     if residue_name in ligand_names:
         # Iterate over the atoms in the ligand
         for atom in residue.get_atoms():
-            # find all atoms within 5A of the ligand atom
-            nearby = ns.search(atom.coord, 5)
+            # find all atoms within 8A of the ligand atom
+            nearby = ns.search(atom.coord, 8)
             # filter atoms that belong to the protein
             nearby_protein_atoms = [a for a in nearby if a.get_parent().get_resname() in standard_residues]
             ligand_binding_site_atoms.extend([(nearby_atom.get_name(), nearby_atom.coord, nearby_atom.get_parent().get_resname()) for nearby_atom in nearby_protein_atoms])
+
+
+
+#################
+#### Environments
+#################
+            
+            
+environments = {}
+
+for residue in data.get_residues():
+    if residue.get_resname() not in ligand_residues and residue.get_resname() != 'HOH':  # Exclude water residues
+        for selected_atom in residue.get_atoms():
+            nearby_atoms = ns.search(selected_atom.coord, 8)  # Change the radius if needed
+
+            # Filter nearby atoms that are not water and are not in residues of ligand_names
+            nearby_atoms = [atom for atom in nearby_atoms if atom.get_parent().get_resname() != 'HOH' and atom.get_parent().get_resname() not in ligand_residues]
+            
+            # Initialize the atom counts and counter outside of the loop
+            atom_counts = {}
+            atom_counter = 0
+            
+            for nearby_atom in nearby_atoms:
+                atom_counter += 1
+
+                if nearby_atom.get_id() in atom_counts:
+                    atom_counts[nearby_atom.get_id()] += 1
+                else:
+                    atom_counts[nearby_atom.get_id()] = 1
+
+                if str("total" + nearby_atom.element) in atom_counts:
+                    atom_counts["total" + nearby_atom.element] += 1
+                else:
+                    atom_counts["total" + nearby_atom.element] = 1
+
+            # Add the atom counts to the environments dictionary
+            atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
+            environments[(selected_atom.get_serial_number(), selected_atom.get_parent().get_resname())] = atom_proportions
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
