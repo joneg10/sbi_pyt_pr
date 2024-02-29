@@ -1,49 +1,28 @@
 from Bio.PDB import *
+from read_pdb_functions import *
+import pandas as pd
+import matplotlib.pyplot as plt
+from classes_definitions import *
 
+
+
+
+#### APPROACH 1: FUNCTIONS #####
 
 parser = PDBParser(PERMISSIVE = True, QUIET = True)
-data = parser.get_structure('10gs', 'pdb_ids/10GS.pdb/pdb10gs.ent')
-
-# Get all atoms in the structure
-atoms = list(data.get_atoms())
-
-# Create a NeighborSearch object
-ns = NeighborSearch(atoms)
-
-# List of standard amino acids
-standard_residues = ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
+data = parser.get_structure('10gs', '../pdb_ids/10GS.pdb/pdb10gs.ent')
 
 
-# Initialize an empty list to store the ligand names
+# Get the ligand residues
 
-
-ligand_residues = []
-
-for residue in data.get_residues():
-    resname = residue.get_resname()
-    if resname not in standard_residues and resname != 'HOH':
-        ligand_residues.append(resname)
-
-print(ligand_residues)
+ligand_residues = get_ligands_from_structure(data)
 
 
 #############
 ## ligand binding site
 #############
-ligand_binding_site_atoms = []
-# Iterate over the residues in the structure
-for residue in data.get_residues():
-    residue_name = residue.get_resname()
-    # Check if the residue is a ligand
-    if residue_name in ligand_names:
-        # Iterate over the atoms in the ligand
-        for atom in residue.get_atoms():
-            # find all atoms within 8A of the ligand atom
-            nearby = ns.search(atom.coord, 8)
-            # filter atoms that belong to the protein
-            nearby_protein_atoms = [a for a in nearby if a.get_parent().get_resname() in standard_residues]
-            ligand_binding_site_atoms.extend([(nearby_atom.get_name(), nearby_atom.coord, nearby_atom.get_parent().get_resname()) for nearby_atom in nearby_protein_atoms])
 
+ligand_binding_site_atoms = get_ligand_binding_site_atoms(data)
 
 
 #################
@@ -51,37 +30,35 @@ for residue in data.get_residues():
 #################
             
             
-environments = {}
+get_structure_environments(data)
 
-for residue in data.get_residues():
-    if residue.get_resname() not in ligand_residues and residue.get_resname() != 'HOH':  # Exclude water residues
-        for selected_atom in residue.get_atoms():
-            nearby_atoms = ns.search(selected_atom.coord, 8)  # Change the radius if needed
+# create data frame
+df = pd.DataFrame.from_dict(get_structure_environments(data), orient='index')
 
-            # Filter nearby atoms that are not water and are not in residues of ligand_names
-            nearby_atoms = [atom for atom in nearby_atoms if atom.get_parent().get_resname() != 'HOH' and atom.get_parent().get_resname() not in ligand_residues]
-            
-            # Initialize the atom counts and counter outside of the loop
-            atom_counts = {}
-            atom_counter = 0
-            
-            for nearby_atom in nearby_atoms:
-                atom_counter += 1
+df.to_csv('output.csv', index=True)
 
-                if nearby_atom.get_id() in atom_counts:
-                    atom_counts[nearby_atom.get_id()] += 1
-                else:
-                    atom_counts[nearby_atom.get_id()] = 1
 
-                if str("total" + nearby_atom.element) in atom_counts:
-                    atom_counts["total" + nearby_atom.element] += 1
-                else:
-                    atom_counts["total" + nearby_atom.element] = 1
 
-            # Add the atom counts to the environments dictionary
-            atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
-            environments[(selected_atom.get_serial_number(), selected_atom.get_parent().get_resname())] = atom_proportions
 
+# smoothing the values
+smoothed_values = df['ligand_binding_site'].rolling(window=30).mean()
+
+# binarize
+df["ligand_binary"] = [1 if value > 0.7 else 0 for value in df["ligand_binding_site"]]
+
+# plot
+plt.plot(df.index, df['is_lbs'])
+plt.xticks([])
+plt.show(block=False)
+
+
+
+
+#save list of atoms that are considered to be in the ligand binding site
+filtered_indices = list(df[df["is_lbs"] == "Yes"].index)
+
+with open("list_of_indices.txt","w") as f:
+    f.write(str(filtered_indices).replace('[','').replace(']','').replace('\'',''))
 
 
 
@@ -101,41 +78,59 @@ for residue in data.get_residues():
 
 
 
-# Create a new PDB structure
-structure = Structure.Structure('Ligand Binding Site')
-
-# Create a new model
-model = Model.Model(0)
-
-# Add the model to the structure
-structure.add(model)
-
-# Create a new chain
-chain = Chain.Chain('A')
-
-# Add the chain to the model
-model.add(chain)
 
 
 
-# Iterate over the atoms in the ligand binding site and create a structure
-for i, (atom_name, atom_coord, residue_name) in enumerate(ligand_binding_site_atoms):
-    # Create a new residue
-    residue = Residue.Residue((' ', i+1, ' '), residue_name, ' ')
-    # Add the residue to the chain
-    chain.add(residue)
+
+
+
+
+
+
+
+
+# # Create a new PDB structure
+# structure = Structure.Structure('Ligand Binding Site')
+
+# # Create a new model
+# model = Model.Model(0)
+
+# # Add the model to the structure
+# structure.add(model)
+
+# # Create a new chain
+# chain = Chain.Chain('A')
+
+# # Add the chain to the model
+# model.add(chain)
+
+# # Iterate over the atoms in the ligand binding site and create a structure
+# for i, (atom_name, atom_coord, residue_name) in enumerate(ligand_binding_site_atoms):
+#     # Create a new residue
+#     residue = Residue.Residue((' ', i+1, ' '), residue_name, ' ')
+#     # Add the residue to the chain
+#     chain.add(residue)
     
-    # Create a new Atom object
-    atom = Atom.Atom(atom_name, atom_coord, 0.0, 1.0, ' ', atom_name, i)
-    # Add the atom to the residue
-    residue.add(atom)
+#     # Create a new Atom object
+#     atom = Atom.Atom(atom_name, atom_coord, 0.0, 1.0, ' ', atom_name, i)
+#     # Add the atom to the residue
+#     residue.add(atom)
 
-# Create a PDBIO object
-pdb_io = PDBIO()
-# Set the structure to be written
-pdb_io.set_structure(structure)
-# Save the structure to a PDB file
-pdb_io.save('ligand_binding_site.pdb')
+# # Create a PDBIO object
+# pdb_io = PDBIO()
+# # Set the structure to be written
+# pdb_io.set_structure(structure)
+# # Save the structure to a PDB file
+# pdb_io.save('ligand_binding_site.pdb')
 
 
 
+
+
+
+#### APPROACH 2: CLASSES #####
+
+analysis = StructureAnalysis('../pdb_ids/10GS.pdb/pdb10gs.ent')
+analysis.get_ligands_from_structure()
+analysis.get_ligand_binding_site_atoms()
+analysis.get_structure_environments()
