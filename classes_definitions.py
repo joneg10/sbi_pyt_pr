@@ -1,4 +1,7 @@
 from Bio.PDB import PDBParser, NeighborSearch
+from Bio.PDB.SASA import ShrakeRupley
+from rdkit import Chem
+from rdkit.Chem import Descriptors
 
 class StructureAnalysis:
     def __init__(self, pdb_file):
@@ -7,6 +10,8 @@ class StructureAnalysis:
         self.structure = parser.get_structure('structure', pdb_file)
         self.standard_residues = ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
         self.ns = NeighborSearch(list(self.structure.get_atoms()))
+        self.sr = ShrakeRupley()
+        self.sasa = self.sr.compute(self.structure, level = 'A')
 
     def get_ligands_from_structure(self):
         '''Returns list of ligands in the structure'''
@@ -99,6 +104,12 @@ class StructureAnalysis:
                         for nearby_atom in nearby_atoms:
                             if nearby_atom.get_serial_number() in serial_numbers_lbs:
                                 atom_counts["ligand_binding_site"] += 1
+
+                        atom_counts["sasa"] = 0
+                        for nearby_atom in nearby_atoms:
+                            
+                            atom_counts["sasa"] += nearby_atom.sasa
+
                             
 
                         atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
@@ -121,3 +132,7 @@ class StructureAnalysis:
         else:
             print("No ligand names provided")
             return None
+
+
+
+

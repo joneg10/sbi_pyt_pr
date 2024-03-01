@@ -1,16 +1,16 @@
 from Bio.PDB import *
 from read_pdb_functions import *
 import pandas as pd
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 from classes_definitions import *
-
-
+import os
+from Bio.PDB.SASA import ShrakeRupley
 
 
 #### APPROACH 1: FUNCTIONS #####
 
 parser = PDBParser(PERMISSIVE = True, QUIET = True)
-data = parser.get_structure('10gs', '../pdb_ids/10GS.pdb/pdb10gs.ent')
+data = parser.get_structure('10gs', '../pdb_ids/10gs.pdb')
 
 
 # Get the ligand residues
@@ -39,13 +39,12 @@ df.to_csv('output.csv', index=True)
 
 
 
-
 # smoothing the values
 smoothed_values = df['ligand_binding_site'].rolling(window=30).mean()
 
 # binarize
 df["ligand_binary"] = [1 if value > 0.7 else 0 for value in df["ligand_binding_site"]]
-
+df["smoothed_values"] = smoothed_values
 # plot
 plt.plot(df.index, df['is_lbs'])
 plt.xticks([])
@@ -57,7 +56,7 @@ plt.show(block=False)
 #save list of atoms that are considered to be in the ligand binding site
 filtered_indices = list(df[df["is_lbs"] == "Yes"].index)
 
-with open("list_of_indices.txt","w") as f:
+with open("list_of_indices_yes_no.txt","w") as f:
     f.write(str(filtered_indices).replace('[','').replace(']','').replace('\'',''))
 
 
@@ -130,7 +129,38 @@ with open("list_of_indices.txt","w") as f:
 
 #### APPROACH 2: CLASSES #####
 
-analysis = StructureAnalysis('../pdb_ids/10GS.pdb/pdb10gs.ent')
+analysis = StructureAnalysis('../pdb_ids/10gs.pdb')
 analysis.get_ligands_from_structure()
 analysis.get_ligand_binding_site_atoms()
 analysis.get_structure_environments()
+
+
+
+# take all pdbs from a folder
+pdb_files = []
+folder_path = '../pdb_ids/'
+
+# 
+for file in os.listdir(folder_path):
+    if file.endswith('.pdb'):
+        pdb_files.append(os.path.join(folder_path, file))
+
+# get the environments and save them in a file
+for pdb in pdb_files:
+    analysis = StructureAnalysis(pdb)
+    env = analysis.get_structure_environments()
+    df = pd.DataFrame.from_dict(env, orient='index')
+    df.to_csv('output.csv', mode='a', header=False, index=True)
+
+
+analysis = StructureAnalysis('../pdb_ids/10gs.pdb')
+
+analysis.get_structure_environments()
+
+
+
+
+
+
+
+
