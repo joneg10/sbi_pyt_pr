@@ -1,7 +1,6 @@
 from Bio.PDB import PDBParser, NeighborSearch
 from Bio.PDB.SASA import ShrakeRupley
-from rdkit import Chem
-from rdkit.Chem import Descriptors
+import atom_dict
 
 class StructureAnalysis:
     def __init__(self, pdb_file):
@@ -77,7 +76,18 @@ class StructureAnalysis:
                         
                         atom_counts["b_factor"] = 0 # initialize b_factor
 
+                        
                         # iterate over the nearby atoms and count the atoms
+                        atom_counts["sasa"] = 0
+                        atom_counts["b_factor"] = 0
+                        
+                        atom_counts["aliphatic"] = 0
+                        atom_counts["aromatic"] = 0
+                        atom_counts["donor"] = 0
+                        atom_counts["acceptor"] = 0
+                        atom_counts["don_acc"] = 0
+
+
                         for nearby_atom in nearby_atoms:
                             atom_counter += 1
                             
@@ -86,40 +96,45 @@ class StructureAnalysis:
                                 atom_counts[nearby_atom.get_id()] += 1
                             else:
                                 atom_counts[nearby_atom.get_id()] = 1
+                            
 
-                        # Count the total number of atoms of each element
-                        for nearby_atom in nearby_atoms:
+                            # Count the total number of atoms of each element
+                    
 
                             if str("total"+nearby_atom.element) in atom_counts:
                                 atom_counts["total"+nearby_atom.element] += 1
                             else:
                                 atom_counts["total"+nearby_atom.element] = 1
                         
-                        # Count the total number of atoms
-                        for nearby_atom in nearby_atoms:
+                            # Count the total number of atoms
+                        
                             atom_counts["b_factor"] += nearby_atom.get_bfactor()
 
-                        # Count the number of atoms in the environment that are considered lbs
-                        atom_counts["ligand_binding_site"] = 0
-                        for nearby_atom in nearby_atoms:
-                            if nearby_atom.get_serial_number() in serial_numbers_lbs:
-                                atom_counts["ligand_binding_site"] += 1
-
-                        atom_counts["sasa"] = 0
-                        for nearby_atom in nearby_atoms:
-                            
                             atom_counts["sasa"] += nearby_atom.sasa
 
+                            # Calculate the features of the atom
+                            if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
+                                atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
+
+
+                            if nearby_atom.get_id() == "N":
+                                atom_counts["donor"] +=1
+
+                            if nearby_atom.get_id() == "O":
+                                atom_counts["acceptor"] +=1
+
+                            if nearby_atom.get_id() == "C":
+                                atom_counts["aromatic"] +=1
                             
 
                         atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
                         
                         # create label of atom in lbs
                         if selected_atom.get_serial_number() in serial_numbers_lbs:
-                            atom_proportions["is_lbs"] = "Yes"
+                            atom_proportions["is_lbs"] = 1
 
                         else:
-                            atom_proportions["is_lbs"] = "No"
+                            atom_proportions["is_lbs"] = 0
 
 
                         # use a chimera recognisable code as key 

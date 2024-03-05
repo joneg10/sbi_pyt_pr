@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 from classes_definitions import *
 import os
 from Bio.PDB.SASA import ShrakeRupley
-
+import sys
+import pandas as pd
 
 #### APPROACH 1: FUNCTIONS #####
 
@@ -146,16 +147,33 @@ for file in os.listdir(folder_path):
         pdb_files.append(os.path.join(folder_path, file))
 
 # get the environments and save them in a file
+file = 1
+# Create an empty DataFrame to store the results
+result_df = pd.DataFrame()
+
 for pdb in pdb_files:
     analysis = StructureAnalysis(pdb)
     env = analysis.get_structure_environments()
     df = pd.DataFrame.from_dict(env, orient='index')
-    df.to_csv('output.csv', mode='a', header=False, index=True)
+    
+    # Reorder the columns of the DataFrame to match the order of the first analysis
+    if result_df.empty:
+        result_df = df
+    else:
+        df = df[result_df.columns]
+    
+    # Append the DataFrame to the result DataFrame
+    result_df = result_df._append(df)
+    
+    if file == 1:
+        result_df.to_csv('../output.csv', mode='w', header=True, index=True)
+    else:    
+        result_df.to_csv('../output.csv', mode='a', header=False, index=True)
+    
+    sys.stdout.write(f'File {pdb} processed\n ')
+    file += 1
 
 
-analysis = StructureAnalysis('../pdb_ids/10gs.pdb')
-
-analysis.get_structure_environments()
 
 
 
