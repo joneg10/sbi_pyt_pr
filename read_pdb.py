@@ -7,6 +7,9 @@ import os
 from Bio.PDB.SASA import ShrakeRupley
 import sys
 import pandas as pd
+from fastparquet import write
+import os
+
 
 #### APPROACH 1: FUNCTIONS #####
 
@@ -167,7 +170,7 @@ for pdb in pdb_files:
     else:
         df = df[result_df.columns]
         # Append the DataFrame to the result DataFrame
-        result_df = result_df.append(df)
+        result_df = result_df._append(df)
     
     if file == 1:
         result_df.to_csv('../output.csv', mode='w', header=True, index=True)
@@ -181,6 +184,41 @@ for pdb in pdb_files:
 
 
 
+
+pdb_files = ["../pdb_ids/10gs.pdb", "../pdb_ids/10gs.pdb"]
+
+result_df = pd.DataFrame()
+
+for pdb in pdb_files:
+    analysis = StructureAnalysis(pdb)
+    env = analysis.get_structure_environments()
+    df = pd.DataFrame.from_dict(env, orient='index')
+    
+    # Add missing columns to df before reordering
+    missing_columns = [col for col in result_df.columns if col not in df.columns]
+    for column in missing_columns:
+        df[column] = np.nan
+    
+    # Reorder the columns of the DataFrame to match the order of the first analysis
+    if result_df.empty:
+        result_df = df
+    else:
+        df = df[result_df.columns]
+        # Append the DataFrame to the result DataFrame
+        result_df = result_df._append(df)
+    
+    output_file = '../output.parquet'
+    if os.path.exists(output_file):
+        # If the output file already exists, read it and append the new data
+        existing_df = pd.read_parquet(output_file)
+        result_df = existing_df._append(result_df)
+    
+    # Write the result DataFrame to the Parquet file
+    result_df.to_parquet(output_file)
+    
+    sys.stdout.write(f'File {pdb} processed\n ')
+    file += 1
+    
 
 
 
