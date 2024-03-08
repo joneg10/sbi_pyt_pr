@@ -139,7 +139,7 @@ analysis.get_structure_environments()
 
 # take all pdbs from a folder
 pdb_files = []
-folder_path = '../pdb_ids/'
+folder_path = 'pdb_ids/'
 
 # 
 for file in os.listdir(folder_path):
@@ -156,14 +156,18 @@ for pdb in pdb_files:
     env = analysis.get_structure_environments()
     df = pd.DataFrame.from_dict(env, orient='index')
     
+    # Add missing columns to df before reordering
+    missing_columns = [col for col in result_df.columns if col not in df.columns]
+    for column in missing_columns:
+        df[column] = np.nan
+    
     # Reorder the columns of the DataFrame to match the order of the first analysis
     if result_df.empty:
         result_df = df
     else:
         df = df[result_df.columns]
-    
-    # Append the DataFrame to the result DataFrame
-    result_df = result_df._append(df)
+        # Append the DataFrame to the result DataFrame
+        result_df = result_df.append(df)
     
     if file == 1:
         result_df.to_csv('../output.csv', mode='w', header=True, index=True)
@@ -172,6 +176,7 @@ for pdb in pdb_files:
     
     sys.stdout.write(f'File {pdb} processed\n ')
     file += 1
+    
 
 
 

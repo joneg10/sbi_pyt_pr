@@ -89,8 +89,6 @@ class StructureAnalysis:
                         atom_counts["acceptor"] = 0
                         atom_counts["don_acc"] = 0
 
-                        atom_proportions["environment_density"] = 0
-
                         for nearby_atom in nearby_atoms:
                             atom_counter += 1
                             
@@ -142,6 +140,94 @@ class StructureAnalysis:
                         else:
                             atom_proportions["is_lbs"] = 0
 
+
+                        # use a chimera recognisable code as key 
+                            
+                        chimera_code = ":" + str(residue.get_id()[1]) + "@" + selected_atom.get_name()
+                        environments[chimera_code] = atom_proportions
+
+            return environments
+            
+        else:
+            print("No ligand names provided")
+            return None
+        
+    def get_input_environments(self):
+        '''Returns dictionary of environments of each residue in the structure of the input PDB file'''
+        environments = {}
+        radio = 8
+        sphere_volume = 4/3 * math.pi * radio**3
+
+        for residue in self.structure.get_residues():
+            
+            if residue.get_resname() in self.standard_residues:  # Just include standard residues. 
+                for selected_atom in residue.get_atoms():
+                    nearby_atoms = self.ns.search(selected_atom.coord, radio)  # Change the radius if needed
+
+                    # Filter nearby atoms that are standard residues.
+                    nearby_atoms = [atom for atom in nearby_atoms if atom.get_parent().get_resname() in self.standard_residues]
+                    
+                    # Initialize the atom counts and counter outside of the loop
+                    atom_counts = {}
+                    atom_counter = 0
+                    
+                    
+                    atom_counts["b_factor"] = 0 # initialize b_factor
+
+                    
+                    # iterate over the nearby atoms and count the atoms
+                    atom_counts["sasa"] = 0
+                    atom_counts["b_factor"] = 0
+                    
+                    atom_counts["aliphatic"] = 0
+                    atom_counts["aromatic"] = 0
+                    atom_counts["donor"] = 0
+                    atom_counts["acceptor"] = 0
+                    atom_counts["don_acc"] = 0
+
+                    for nearby_atom in nearby_atoms:
+                        atom_counter += 1
+                        
+                        # Count the number of atoms of each type
+                        if nearby_atom.get_id() in atom_counts:
+                            atom_counts[nearby_atom.get_id()] += 1
+                        else:
+                            atom_counts[nearby_atom.get_id()] = 1
+                        
+
+                        # Count the total number of atoms of each element
+                
+
+                        if str("total"+nearby_atom.element) in atom_counts:
+                            atom_counts["total"+nearby_atom.element] += 1
+                        else:
+                            atom_counts["total"+nearby_atom.element] = 1
+                    
+                        # Count the total number of atoms
+                    
+                        atom_counts["b_factor"] += nearby_atom.get_bfactor()
+
+                        atom_counts["sasa"] += nearby_atom.sasa
+
+                        # Calculate the features of the atom
+                        if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
+                            atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
+
+
+                        if nearby_atom.get_id() == "N":
+                            atom_counts["donor"] +=1
+
+                        if nearby_atom.get_id() == "O":
+                            atom_counts["acceptor"] +=1
+
+                        if nearby_atom.get_id() == "C":
+                            atom_counts["aromatic"] +=1
+                        
+                        atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
+                        
+                        # create label of atom in lbs
+
+                        atom_proportions["environment_density"] = atom_counter/sphere_volume
 
                         # use a chimera recognisable code as key 
                             
