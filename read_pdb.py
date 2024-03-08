@@ -7,90 +7,8 @@ import os
 from Bio.PDB.SASA import ShrakeRupley
 import sys
 import pandas as pd
-from fastparquet import write
+import fastparquet
 import os
-
-
-#### APPROACH 1: FUNCTIONS #####
-
-parser = PDBParser(PERMISSIVE = True, QUIET = True)
-data = parser.get_structure('10gs', '../pdb_ids/10gs.pdb')
-
-
-# Get the ligand residues
-
-ligand_residues = get_ligands_from_structure(data)
-
-
-#############
-## ligand binding site
-#############
-
-ligand_binding_site_atoms = get_ligand_binding_site_atoms(data)
-
-
-#################
-#### Environments
-#################
-            
-            
-get_structure_environments(data)
-
-# create data frame
-df = pd.DataFrame.from_dict(get_structure_environments(data), orient='index')
-
-df.to_csv('output.csv', index=True)
-
-
-
-# smoothing the values
-smoothed_values = df['ligand_binding_site'].rolling(window=30).mean()
-
-# binarize
-df["ligand_binary"] = [1 if value > 0.7 else 0 for value in df["ligand_binding_site"]]
-df["smoothed_values"] = smoothed_values
-# plot
-plt.plot(df.index, df['is_lbs'])
-plt.xticks([])
-plt.show(block=False)
-
-
-
-
-#save list of atoms that are considered to be in the ligand binding site
-filtered_indices = list(df[df["is_lbs"] == "Yes"].index)
-
-with open("list_of_indices_yes_no.txt","w") as f:
-    f.write(str(filtered_indices).replace('[','').replace(']','').replace('\'',''))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # # Create a new PDB structure
 # structure = Structure.Structure('Ligand Binding Site')
@@ -127,18 +45,7 @@ with open("list_of_indices_yes_no.txt","w") as f:
 # pdb_io.save('ligand_binding_site.pdb')
 
 
-
-
-
-
 #### APPROACH 2: CLASSES #####
-
-analysis = StructureAnalysis('../pdb_ids/10gs.pdb')
-analysis.get_ligands_from_structure()
-analysis.get_ligand_binding_site_atoms()
-analysis.get_structure_environments()
-
-
 
 # take all pdbs from a folder
 pdb_files = []
@@ -150,43 +57,36 @@ for file in os.listdir(folder_path):
         pdb_files.append(os.path.join(folder_path, file))
 
 # get the environments and save them in a file
-file = 1
+# file = 1
 # Create an empty DataFrame to store the results
-result_df = pd.DataFrame()
+# result_df = pd.DataFrame()
 
-for pdb in pdb_files:
-    analysis = StructureAnalysis(pdb)
-    env = analysis.get_structure_environments()
-    df = pd.DataFrame.from_dict(env, orient='index')
+# for pdb in pdb_files:
+#     analysis = StructureAnalysis(pdb)
+#     env = analysis.get_structure_environments()
+#     df = pd.DataFrame.from_dict(env, orient='index')
     
-    # Add missing columns to df before reordering
-    missing_columns = [col for col in result_df.columns if col not in df.columns]
-    for column in missing_columns:
-        df[column] = np.nan
+#     # Add missing columns to df before reordering
+#     missing_columns = [col for col in result_df.columns if col not in df.columns]
+#     for column in missing_columns:
+#         df[column] = np.nan
     
-    # Reorder the columns of the DataFrame to match the order of the first analysis
-    if result_df.empty:
-        result_df = df
-    else:
-        df = df[result_df.columns]
-        # Append the DataFrame to the result DataFrame
-        result_df = result_df._append(df)
+#     # Reorder the columns of the DataFrame to match the order of the first analysis
+#     if result_df.empty:
+#         result_df = df
+#     else:
+#         df = df[result_df.columns]
+#         # Append the DataFrame to the result DataFrame
+#         result_df = result_df._append(df)
     
-    if file == 1:
-        result_df.to_csv('../output.csv', mode='w', header=True, index=True)
-    else:    
-        result_df.to_csv('../output.csv', mode='a', header=False, index=True)
+#     if file == 1:
+#         result_df.to_csv('../output.csv', mode='w', header=True, index=True)
+#     else:    
+#         result_df.to_csv('../output.csv', mode='a', header=False, index=True)
     
-    sys.stdout.write(f'File {pdb} processed\n ')
-    file += 1
+#     sys.stdout.write(f'File {pdb} processed\n ')
+#     file += 1
     
-
-
-
-
-
-pdb_files = ["../pdb_ids/10gs.pdb", "../pdb_ids/10gs.pdb"]
-
 result_df = pd.DataFrame()
 
 for pdb in pdb_files:
@@ -216,9 +116,7 @@ for pdb in pdb_files:
     # Write the result DataFrame to the Parquet file
     result_df.to_parquet(output_file)
     
-    sys.stdout.write(f'File {pdb} processed\n ')
-    file += 1
-    
+    sys.stdout.write(f'File {pdb} processed\n ')    
 
 
 
