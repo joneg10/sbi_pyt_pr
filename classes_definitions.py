@@ -1,6 +1,7 @@
 from Bio.PDB import PDBParser, NeighborSearch
 from Bio.PDB.SASA import ShrakeRupley
 import atom_dict
+import math
 
 class StructureAnalysis:
     def __init__(self, pdb_file):
@@ -58,13 +59,14 @@ class StructureAnalysis:
         ligand_binding_atoms = self.get_ligand_binding_site_atoms()
         serial_numbers_lbs = set([t[0] for t in ligand_binding_atoms])
         environments = {}
-
+        radio = 8
+        sphere_volume = 4/3 * math.pi * radio**3
         if len(ligand_names) > 0:
             for residue in self.structure.get_residues():
             
                 if residue.get_resname() not in ligand_names and residue.get_resname() != 'HOH':  # Exclude water residues and ligand residues
                     for selected_atom in residue.get_atoms():
-                        nearby_atoms = self.ns.search(selected_atom.coord, 8)  # Change the radius if needed
+                        nearby_atoms = self.ns.search(selected_atom.coord, radio)  # Change the radius if needed
 
                         # Filter nearby atoms that are not water and are not in residues of ligand_names
                         nearby_atoms = [atom for atom in nearby_atoms if atom.get_parent().get_resname() != 'HOH' and atom.get_parent().get_resname() not in ligand_names]
@@ -87,6 +89,7 @@ class StructureAnalysis:
                         atom_counts["acceptor"] = 0
                         atom_counts["don_acc"] = 0
 
+                        atom_proportions["environment_density"] = 0
 
                         for nearby_atom in nearby_atoms:
                             atom_counter += 1
@@ -130,6 +133,9 @@ class StructureAnalysis:
                         atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
                         
                         # create label of atom in lbs
+
+                        atom_proportions["environment_density"] = atom_counter/sphere_volume
+
                         if selected_atom.get_serial_number() in serial_numbers_lbs:
                             atom_proportions["is_lbs"] = 1
 
