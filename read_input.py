@@ -1,27 +1,84 @@
-from Bio.PDB import PDBParser, NeighborSearch
-from Bio.PDB.SASA import ShrakeRupley
-import atom_dict
-import math
 import argparse
-import sys
 from classes_definitions import *
 import pandas as pd
+import torch
+import torch.nn as nn
+import subprocess
+import tempfile
+import os
 
-parser = argparse.ArgumentParser(description='Process some pdb files.')
+mean = torch.tensor([3.4787e+01, 3.0443e+00, 1.9361e-01, 2.1253e-01, 1.6394e-01, 1.6309e-01,
+        1.3352e-02, 2.7850e-02, 6.3293e-01, 4.4168e-03, 1.6767e-01, 3.2025e-02,
+        7.1537e-02, 6.0628e-03, 1.8101e-01, 2.7267e-02, 1.0240e-02, 1.1805e-01,
+        1.3070e-01, 1.3029e-01, 1.2897e-01, 1.2917e-01, 7.1875e-03, 2.4488e-02,
+        4.0618e-02, 1.5385e-02, 5.7021e-03, 5.3287e-03, 1.2753e-02, 7.6583e-03,
+        5.2297e-03, 1.1875e-02, 1.1624e-02, 5.0469e-03, 1.7303e-02, 1.8148e-03,
+        4.7217e-03, 2.9069e-03, 1.8127e-03, 1.7826e-03, 1.7981e-03, 1.8821e-03,
+        1.8380e-03, 6.1939e-03, 4.3010e-03, 6.3468e-03, 6.5647e-03, 2.8375e-03])
 
-parser.add_argument('-i', '--input',
-                    dest = "infile",
-                    action = "store",
-                    default = None,
-                    help = "Input FASTA formatted file")
+std = torch.tensor([2.4775e+01, 2.7933e+00, 7.6304e-02, 6.3380e-02, 3.0415e-02, 3.2761e-02,
+        1.3394e-02, 1.9076e-02, 6.5999e-02, 8.4308e-03, 3.1463e-02, 2.0603e-02,
+        2.1160e-02, 9.2975e-03, 3.5243e-02, 1.8131e-02, 1.1839e-02, 1.9518e-02,
+        2.2387e-02, 2.2143e-02, 2.4054e-02, 2.0577e-02, 9.7518e-03, 1.7913e-02,
+        1.3887e-02, 1.3184e-02, 8.6615e-03, 8.5087e-03, 1.2413e-02, 1.0304e-02,
+        8.5216e-03, 1.1931e-02, 1.2604e-02, 8.4529e-03, 1.5614e-02, 5.8573e-03,
+        8.6552e-03, 6.2257e-03, 4.7201e-03, 4.7085e-03, 4.7130e-03, 4.7791e-03,
+        4.7531e-03, 9.3402e-03, 7.2882e-03, 9.4651e-03, 9.6712e-03, 6.3077e-03])
+
+parser = argparse.ArgumentParser(description='Process input PDB')
+
+parser.add_argument('-f', '--file',
+                    dest="pdb_file",
+                    action="store",
+                    required=True,
+                    help="Input PDB file")
 
 
-input_structure = StructureAnalysis(sys.argv[1])
 
-df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
+args = parser.parse_args()
+
+input_structure = StructureAnalysis(args.pdb_file)
+
+environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
+
+
+X_to_predict = torch.tensor(environment_df.values, dtype=torch.float32)
+X_to_predict_normalized = (X_to_predict - mean) / std
+
+### predict
+
+model = nn.Sequential(
+    nn.Linear(48, 72),
+    nn.ReLU(),
+    nn.Linear(72, 48),
+    nn.ReLU(),
+    nn.Linear(48, 1),
+    nn.Sigmoid()
+)
+
+
+model.load_state_dict(torch.load("neural_network.pytorch"))
 
 
 
+# prediction
+
+prediction = model(X_to_predict_normalized) 
+
+prediction_codes = pd.DataFrame({'code': environment_df.index, 'prediction': prediction.detach().numpy().flatten()})
+
+atoms_to_select = str(list(prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values)).replace("'", "").replace("[", "").replace("]", "").replace(" ", "")
 
 
 
+# Open Chimera
+
+
+with tempfile.NamedTemporaryFile(mode='w', delete=True, suffix='.cmd', dir=".") as f:
+    f.write(f'open {args.pdb_file}\n')  # Open your PDB file
+    f.write(f'select {atoms_to_select}\n')  # Select the atom
+    f.write('color red sel\n')  # Color the selected atom red
+    f.flush()
+
+    # Run Chimera with the temporary file
+    subprocess.run(['chimera', f.name])

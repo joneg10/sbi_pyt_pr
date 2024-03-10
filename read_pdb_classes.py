@@ -1,5 +1,4 @@
 from Bio.PDB import *
-from read_pdb_functions import *
 import pandas as pd
 import matplotlib.pyplot as plt 
 from classes_definitions import *
@@ -8,14 +7,14 @@ from Bio.PDB.SASA import ShrakeRupley
 import sys
 import pandas as pd
 import fastparquet
-import os
+
 
 class TrainingSet:
         def __init__(self, pdb_path):
             self.pdb_path = pdb_path
 
         def get_pdb_files(self):
-            pdb_files = [f for f in os.listdir(self.pdb_path) if f.endswith('.pdb')]
+            pdb_files = [(self.pdb_path + "/" + f) for f in os.listdir(self.pdb_path) if f.endswith('.pdb')]
             return pdb_files
 
         def get_formated_set(self):

@@ -5,49 +5,75 @@ import pandas as pd
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from read_pdb_classes import *
+from sklearn.preprocessing import StandardScaler
+from torch.optim.lr_scheduler import ExponentialLR
+from sklearn.metrics import roc_curve, roc_auc_score, auc
+import matplotlib.pyplot as plt
 
-data = pd.read_csv('../output.csv' , na_values = 0 , sep = "," , )
-data.fillna(0, inplace=True)
 
-# From TrainingSet class to format the training set from pdb files, still to computational expensive to run in the server:
-#paths = TrainingSet("./pdb_ids")
-#training_set = paths.get_formated_set()
+
+
+# data = pd.read_csv('../output.csv' , na_values = 0 , sep = "," , )
+# data.fillna(0, inplace=True)
+
+# From TrainingSet class to format the training set from pdb files, still too computational expensive to run in the server:
+paths = TrainingSet("../pdb_ids")
+training_set = paths.get_formated_set()
+training_set.fillna(0, inplace=True)
+
 
 # Set "is_lbs" as the last column
-data["is_lbs"] = data.pop("is_lbs")
+training_set["is_lbs"] = training_set.pop("is_lbs")
 
-# Set "Unnamed: 0" as row names
-data = data.set_index("Unnamed: 0")
+# I wanted to save it to csv to avoid running the previous code again
+training_set.to_csv('/home/martin/master/2nd_trim/sbi/project/sbi_pyt_pr/training_set.csv', index=False)
 
-# Scale the data
-data.loc[:, data.columns != "is_lbs"] = (data.loc[:, data.columns != "is_lbs"] - data.loc[:, data.columns != "is_lbs"].mean()) / data.loc[:, data.columns != "is_lbs"].std()
-
+training_set = pd.read_csv('/home/martin/master/2nd_trim/sbi/project/sbi_pyt_pr/training_set.csv')
 ### Neural network ###
 
 # Define the model
 
-num_data = np.array(data)
-X = num_data[:, :-1]
-Y = num_data[:, -1]
+num_training_set = np.array(training_set)
+X = num_training_set[:, :-1]
+Y = num_training_set[:, -1]
 
 X = torch.tensor(X, dtype=torch.float32)
 Y = torch.tensor(Y, dtype=torch.float32).reshape(-1, 1)
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=42)
 
+mean = torch.mean(X_train, dim=0)
+std = torch.std(X_train, dim=0)
+
+X_train_normalized = (X_train - mean) / std
+X_test_normalized = (X_test - mean) / std
+
+
 
 model = nn.Sequential(
-    nn.Linear(46, 69),
+    nn.Linear(48, 72),
     nn.ReLU(),
-    nn.Linear(69, 46),
+    nn.Linear(72, 48),
     nn.ReLU(),
-    nn.Linear(46, 1),
+    nn.Linear(48, 1),
     nn.Sigmoid()
 )
 
 
+
 loss_fn = nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.005)
+
+
+
+# Use learning rate scheduler
+scheduler = ExponentialLR(optimizer, gamma=0.95)
+
+# training loop with learning rate scheduler and early stopping
+best_loss = float('inf')
+patience = 5
+early_stop_counter = 0
+
 
 # training
 
@@ -55,23 +81,86 @@ n_epochs = 100
 batch_size = 10
  
 for epoch in range(n_epochs):
-    for i in range(0, len(X_train), batch_size):
-        Xbatch = X_train[i:i+batch_size]
+    model.train()
+    for i in range(0, len(X_train_normalized), batch_size):
+        Xbatch = torch.tensor(X_train_normalized[i:i+batch_size], dtype=torch.float32)
+        Ybatch = torch.tensor(Y_train[i:i+batch_size], dtype=torch.float32).reshape(-1, 1)
         Y_pred = model(Xbatch)
-        Ybatch = Y_train[i:i+batch_size]
         loss = loss_fn(Y_pred, Ybatch)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    print(f'Finished epoch {epoch}, latest loss {loss}')
+    # Update learning rate
+    scheduler.step()
+    
+    # Validation
+    model.eval()
+    with torch.no_grad():
+        Y_pred_val = model(torch.tensor(X_test_normalized, dtype=torch.float32))
+        val_loss = loss_fn(Y_pred_val, torch.tensor(Y_test, dtype=torch.float32).reshape(-1, 1))
+        
+    print(f'Finished epoch {epoch}, training loss {loss}, validation loss {val_loss}')
+    
+    # Early stopping
+    if val_loss < best_loss:
+        best_loss = val_loss
+        early_stop_counter = 0
+    else:
+        early_stop_counter += 1
+        if early_stop_counter >= patience:
+            print("Early stopping triggered.")
+            break
 
-
+# Evaluate model on test set
+model.eval()
 with torch.no_grad():
-    Y_pred = model(X_test)
- 
-accuracy = (Y_pred.round() == Y_test).float().mean()
-print(f"Accuracy {accuracy}")
+    Y_pred_test = model(torch.tensor(X_test_normalized, dtype=torch.float32))
+    test_loss = loss_fn(Y_pred_test, torch.tensor(Y_test, dtype=torch.float32).reshape(-1, 1))
+print(f"Test loss: {test_loss}")
 
 model.state_dict()
 
 torch.save(model.state_dict(), "neural_network.pytorch")
+
+
+
+
+
+
+
+
+
+## ROC
+
+# Assuming y_test are your true binary labels and prediction are your model's predictions
+
+model = nn.Sequential(
+    nn.Linear(48, 72),
+    nn.ReLU(),
+    nn.Linear(72, 48),
+    nn.ReLU(),
+    nn.Linear(48, 1),
+    nn.Sigmoid()
+)
+
+model.load_state_dict(torch.load("neural_network.pytorch"))
+
+prediction = model(X_test_normalized)
+
+# Compute the ROC curve
+fpr, tpr, thresholds = roc_curve(Y_test, prediction.detach().numpy())
+
+# Compute the AUC
+roc_auc = auc(fpr, tpr)
+
+# Plot the ROC curve
+plt.figure()
+plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc="lower right")
+plt.show()

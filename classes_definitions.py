@@ -12,6 +12,12 @@ class StructureAnalysis:
         self.ns = NeighborSearch(list(self.structure.get_atoms()))
         self.sr = ShrakeRupley()
         self.sasa = self.sr.compute(self.structure, level = 'A')
+        self.column_names = ['b_factor', 'sasa', 'aliphatic', 'aromatic', 'donor', 'acceptor',
+       'don_acc', 'CD', 'totalC', 'NZ', 'totalN', 'CD1', 'CG', 'OE2', 'totalO',
+       'CD2', 'OE1', 'CB', 'N', 'C', 'O', 'CA', 'OG1', 'CG2',
+       'environment_density', 'CZ', 'NE', 'NH1', 'CE1', 'CE', 'NH2', 'CE2',
+       'OD1', 'ND2', 'CG1', 'SG', 'totalS', 'SD', 'CZ3', 'CH2', 'CZ2', 'CE3',
+       'NE1', 'OD2', 'OH', 'OG', 'NE2', 'ND1']
 
     def get_ligands_from_structure(self):
         '''Returns list of ligands in the structure'''
@@ -75,19 +81,10 @@ class StructureAnalysis:
                         atom_counts = {}
                         atom_counter = 0
                         
+                        # set column names
                         
-                        atom_counts["b_factor"] = 0 # initialize b_factor
-
-                        
-                        # iterate over the nearby atoms and count the atoms
-                        atom_counts["sasa"] = 0
-                        atom_counts["b_factor"] = 0
-                        
-                        atom_counts["aliphatic"] = 0
-                        atom_counts["aromatic"] = 0
-                        atom_counts["donor"] = 0
-                        atom_counts["acceptor"] = 0
-                        atom_counts["don_acc"] = 0
+                        for i in self.column_names:
+                            atom_counts[i] = 0
 
                         for nearby_atom in nearby_atoms:
                             atom_counter += 1
@@ -152,6 +149,14 @@ class StructureAnalysis:
             print("No ligand names provided")
             return None
         
+
+
+
+
+
+
+
+
     def get_input_environments(self):
         '''Returns dictionary of environments of each residue in the structure of the input PDB file'''
         environments = {}
@@ -171,19 +176,8 @@ class StructureAnalysis:
                     atom_counts = {}
                     atom_counter = 0
                     
-                    
-                    atom_counts["b_factor"] = 0 # initialize b_factor
-
-                    
-                    # iterate over the nearby atoms and count the atoms
-                    atom_counts["sasa"] = 0
-                    atom_counts["b_factor"] = 0
-                    
-                    atom_counts["aliphatic"] = 0
-                    atom_counts["aromatic"] = 0
-                    atom_counts["donor"] = 0
-                    atom_counts["acceptor"] = 0
-                    atom_counts["don_acc"] = 0
+                    for i in self.column_names:
+                        atom_counts[i] = 0
 
                     for nearby_atom in nearby_atoms:
                         atom_counter += 1
@@ -234,11 +228,8 @@ class StructureAnalysis:
                         chimera_code = ":" + str(residue.get_id()[1]) + "@" + selected_atom.get_name()
                         environments[chimera_code] = atom_proportions
 
-            return environments
+        return environments
             
-        else:
-            print("No ligand names provided")
-            return None
 
 
 
