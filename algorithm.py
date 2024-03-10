@@ -4,9 +4,14 @@ import torch.nn as nn
 import pandas as pd
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
+from read_pdb_classes import *
 
 data = pd.read_csv('../output.csv' , na_values = 0 , sep = "," , )
 data.fillna(0, inplace=True)
+
+# From TrainingSet class to format the training set from pdb files, still to computational expensive to run in the server:
+#paths = TrainingSet("./pdb_ids")
+#training_set = paths.get_formated_set()
 
 # Set "is_lbs" as the last column
 data["is_lbs"] = data.pop("is_lbs")
