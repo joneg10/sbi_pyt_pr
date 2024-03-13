@@ -61,14 +61,13 @@ class StructureAnalysis:
 
     def get_structure_environments(self):
         '''Returns dictionary of environments of each residue in the structure'''
-    
         ligand_names = self.get_ligands_from_structure()
-        ligand_binding_atoms = self.get_ligand_binding_site_atoms()
-        serial_numbers_lbs = set([t[0] for t in ligand_binding_atoms])
-        environments = {}
-        radio = 8
-        sphere_volume = 4/3 * math.pi * radio**3
         if len(ligand_names) > 0:
+            ligand_binding_atoms = self.get_ligand_binding_site_atoms()
+            serial_numbers_lbs = set([t[0] for t in ligand_binding_atoms])
+            environments = {}
+            radio = 8
+            sphere_volume = 4/3 * math.pi * radio**3
             for residue in self.structure.get_residues():
             
                 if residue.get_resname() not in ligand_names and residue.get_resname() != 'HOH':  # Exclude water residues and ligand residues

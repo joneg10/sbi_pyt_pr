@@ -8,6 +8,7 @@ from read_pdb_classes import *
 from sklearn.preprocessing import StandardScaler
 from torch.optim.lr_scheduler import ExponentialLR
 from sklearn.metrics import roc_curve, roc_auc_score, auc
+from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
 
 
@@ -17,19 +18,18 @@ import matplotlib.pyplot as plt
 # data.fillna(0, inplace=True)
 
 # From TrainingSet class to format the training set from pdb files, still too computational expensive to run in the server:
-paths = TrainingSet("../pdb_ids")
+paths = TrainingSet("./pdbs_train")
 training_set = paths.get_formated_set()
 training_set.fillna(0, inplace=True)
 
-# I wanted to save it to csv to avoid running the previous code again
-training_set.to_csv('./training_set.csv', index=False)
-
-training_set = pd.read_csv('./training_set.csv')
+# I wanted to save it to parquet to avoid running the previous code again
+output_file = '../trainingSet.parquet'
+training_set.to_parquet(output_file)
 
 # Set "is_lbs" as the last column
 training_set["is_lbs"] = training_set.pop("is_lbs")
 
-
+training_set = pd.read_parquet('./trainingSet.parquet')
 ### Neural network ###
 
 # Define the model
@@ -52,11 +52,11 @@ X_test_normalized = (X_test - mean) / std
 
 
 model = nn.Sequential(
-    nn.Linear(48, 72),
+    nn.Linear(49, 74),
     nn.ReLU(),
-    nn.Linear(72, 48),
+    nn.Linear(74, 49),
     nn.ReLU(),
-    nn.Linear(48, 1),
+    nn.Linear(49, 1),
     nn.Sigmoid()
 )
 
@@ -79,7 +79,7 @@ early_stop_counter = 0
 # training
 
 n_epochs = 100
-batch_size = 10
+batch_size = 34
  
 for epoch in range(n_epochs):
     model.train()
@@ -121,7 +121,7 @@ print(f"Test loss: {test_loss}")
 
 model.state_dict()
 
-torch.save(model.state_dict(), "neural_network.pytorch")
+torch.save(model.state_dict(), "neural_network_1303_2.pytorch")
 
 
 
@@ -136,15 +136,15 @@ torch.save(model.state_dict(), "neural_network.pytorch")
 # Assuming y_test are your true binary labels and prediction are your model's predictions
 
 model = nn.Sequential(
-    nn.Linear(48, 72),
+    nn.Linear(49, 74),
     nn.ReLU(),
-    nn.Linear(72, 48),
+    nn.Linear(74, 49),
     nn.ReLU(),
-    nn.Linear(48, 1),
+    nn.Linear(49, 1),
     nn.Sigmoid()
 )
 
-model.load_state_dict(torch.load("neural_network.pytorch"))
+model.load_state_dict(torch.load("neural_network_1303_2.pytorch"))
 
 prediction = model(X_test_normalized)
 
@@ -165,3 +165,13 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.show()
+# ...
+
+# Evaluate model on test set
+model.eval()
+with torch.no_grad():
+    Y_pred_test = model(torch.tensor(X_test_normalized, dtype=torch.float32))
+    test_loss = loss_fn(Y_pred_test, torch.tensor(Y_test, dtype=torch.float32).reshape(-1, 1))
+    Y_pred_test_binary = (Y_pred_test >= 0.2).float() # threshold ¿?¿?¿?¿
+    report = classification_report(Y_test, Y_pred_test_binary)
+    print(report)
