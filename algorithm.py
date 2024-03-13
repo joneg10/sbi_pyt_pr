@@ -21,14 +21,15 @@ paths = TrainingSet("../pdb_ids")
 training_set = paths.get_formated_set()
 training_set.fillna(0, inplace=True)
 
+# I wanted to save it to csv to avoid running the previous code again
+training_set.to_csv('./training_set.csv', index=False)
+
+training_set = pd.read_csv('./training_set.csv')
 
 # Set "is_lbs" as the last column
 training_set["is_lbs"] = training_set.pop("is_lbs")
 
-# I wanted to save it to csv to avoid running the previous code again
-training_set.to_csv('/home/martin/master/2nd_trim/sbi/project/sbi_pyt_pr/training_set.csv', index=False)
 
-training_set = pd.read_csv('/home/martin/master/2nd_trim/sbi/project/sbi_pyt_pr/training_set.csv')
 ### Neural network ###
 
 # Define the model

@@ -4,6 +4,13 @@ import atom_dict
 import math
 
 class StructureAnalysis:
+    column_names = ['b_factor', 'sasa', 'aliphatic', 'aromatic', 'donor', 'acceptor',
+       'don_acc', 'CD', 'totalC', 'NZ', 'totalN', 'CD1', 'CG', 'OE2', 'totalO',
+       'CD2', 'OE1', 'CB', 'N', 'C', 'O', 'CA', 'OG1', 'CG2',
+       'environment_density', 'CZ', 'NE', 'NH1', 'CE1', 'CE', 'NH2', 'CE2',
+       'OD1', 'ND2', 'CG1', 'SG', 'totalS', 'SD', 'CZ3', 'CH2', 'CZ2', 'CE3',
+       'NE1', 'OD2', 'OH', 'OG', 'NE2', 'ND1']
+        
     def __init__(self, pdb_file):
         
         parser = PDBParser()
@@ -12,12 +19,6 @@ class StructureAnalysis:
         self.ns = NeighborSearch(list(self.structure.get_atoms()))
         self.sr = ShrakeRupley()
         self.sasa = self.sr.compute(self.structure, level = 'A')
-        self.column_names = ['b_factor', 'sasa', 'aliphatic', 'aromatic', 'donor', 'acceptor',
-       'don_acc', 'CD', 'totalC', 'NZ', 'totalN', 'CD1', 'CG', 'OE2', 'totalO',
-       'CD2', 'OE1', 'CB', 'N', 'C', 'O', 'CA', 'OG1', 'CG2',
-       'environment_density', 'CZ', 'NE', 'NH1', 'CE1', 'CE', 'NH2', 'CE2',
-       'OD1', 'ND2', 'CG1', 'SG', 'totalS', 'SD', 'CZ3', 'CH2', 'CZ2', 'CE3',
-       'NE1', 'OD2', 'OH', 'OG', 'NE2', 'ND1']
 
     def get_ligands_from_structure(self):
         '''Returns list of ligands in the structure'''

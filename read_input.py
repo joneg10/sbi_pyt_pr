@@ -41,6 +41,8 @@ input_structure = StructureAnalysis(args.pdb_file)
 
 environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
 
+columns_to_drop = [col for col in environment_df.columns if col not in StructureAnalysis.column_names]
+environment_df.drop(columns_to_drop, axis=1, inplace=True)
 
 X_to_predict = torch.tensor(environment_df.values, dtype=torch.float32)
 X_to_predict_normalized = (X_to_predict - mean) / std
