@@ -6,6 +6,7 @@ import torch.nn as nn
 import subprocess
 import tempfile
 import os
+import sys
 
 mean = torch.tensor([3.4787e+01, 3.0443e+00, 1.9361e-01, 2.1253e-01, 1.6394e-01, 1.6309e-01,
         1.3352e-02, 2.7850e-02, 6.3293e-01, 4.4168e-03, 1.6767e-01, 3.2025e-02,
@@ -33,16 +34,33 @@ parser.add_argument('-f', '--file',
                     required=True,
                     help="Input PDB file")
 
+parser.add_argument('-c', '--chimera',
+                    dest="open_chimera",
+                    action="store_true",
+                    help="Open Chimera with the output")
 
+parser.add_argument('-a', '--atoms',
+                    dest="output_atoms",
+                    action="store_true",
+                    help="Show the prediction per atoms.")
+
+parser.add_argument('-o', '--output',
+                    dest="output_file",
+                    action="store",
+                    help="Output file to write the results")
 
 args = parser.parse_args()
 
 input_structure = StructureAnalysis(args.pdb_file)
 
+
 environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
 
-columns_to_drop = [col for col in environment_df.columns if col not in StructureAnalysis.column_names]
+columns_to_drop = [col for col in environment_df.columns if col not in StructureAnalysis.column_names and col != "residue"]
 environment_df.drop(columns_to_drop, axis=1, inplace=True)
+
+
+residue_col = environment_df.pop("residue")
 
 X_to_predict = torch.tensor(environment_df.values, dtype=torch.float32)
 X_to_predict_normalized = (X_to_predict - mean) / std
@@ -67,20 +85,47 @@ model.load_state_dict(torch.load("neural_network.pytorch"))
 
 prediction = model(X_to_predict_normalized) 
 
-prediction_codes = pd.DataFrame({'code': environment_df.index, 'prediction': prediction.detach().numpy().flatten()})
+prediction_codes = pd.DataFrame({'code': environment_df.index,
+                                'prediction': prediction.detach().numpy().flatten(),
+                                'residue': residue_col})
+
+residues_output = set(prediction_codes[prediction_codes["prediction"] > 0.5]["residue"].values)
+
+residues_output = sorted(residues_output, key=lambda x: int(x[3:]))
+
+if args.output_atoms:
+        if args.output_file:
+                with open(args.output_file, "w") as f:
+                        f.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n")
+                        for atom in prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values:
+                               f.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
+
+        else:
+                sys.stdout.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n")
+                for atom in prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values:
+                        sys.stdout.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
+
+else:
+        if args.output_file:
+                with open(args.output_file, "w") as f:
+                        f.write(f"RESIDUE:\n")
+                        for residue in residues_output:
+                                f.write(residue+"\n")
+        else:
+                sys.stdout.write(f"RESIDUE:\n")
+                for residue in residues_output:
+                        sys.stdout.write(residue+"\n")
+
 
 atoms_to_select = str(list(prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values)).replace("'", "").replace("[", "").replace("]", "").replace(" ", "")
 
-
-
 # Open Chimera
+if args.open_chimera:
+        with tempfile.NamedTemporaryFile(mode='w', delete=True, suffix='.cmd', dir=".") as f:
+                f.write(f'open {args.pdb_file}\n')  # Open your PDB file
+                f.write(f'select {atoms_to_select}\n')  # Select the atom
+                f.write('color red sel\n')  # Color the selected atom red
+                f.flush()
 
-
-with tempfile.NamedTemporaryFile(mode='w', delete=True, suffix='.cmd', dir=".") as f:
-    f.write(f'open {args.pdb_file}\n')  # Open your PDB file
-    f.write(f'select {atoms_to_select}\n')  # Select the atom
-    f.write('color red sel\n')  # Color the selected atom red
-    f.flush()
-
-    # Run Chimera with the temporary file
-    subprocess.run(['chimera', f.name])
+                # Run Chimera with the temporary file
+                subprocess.run(['chimera', f.name])

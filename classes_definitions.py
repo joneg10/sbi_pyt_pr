@@ -224,6 +224,10 @@ class StructureAnalysis:
 
                         atom_proportions["environment_density"] = atom_counter/sphere_volume
 
+                        # create a label for the residues
+                        
+                        atom_proportions["residue"] = residue.get_resname() + str(residue.get_id()[1])
+
                         # use a chimera recognisable code as key 
                             
                         chimera_code = ":" + str(residue.get_id()[1]) + "@" + selected_atom.get_name()
