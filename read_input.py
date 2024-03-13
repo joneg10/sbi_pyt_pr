@@ -51,14 +51,12 @@ parser.add_argument('-o', '--output',
 
 args = parser.parse_args()
 
-input_structure = StructureAnalysis(args.pdb_file)
-
+input_structure = StructureAnalysis("../pdb_ids/1B42.pdb")
 
 environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
 
 columns_to_drop = [col for col in environment_df.columns if col not in StructureAnalysis.column_names and col != "residue"]
 environment_df.drop(columns_to_drop, axis=1, inplace=True)
-
 
 residue_col = environment_df.pop("residue")
 
@@ -96,7 +94,7 @@ residues_output = sorted(residues_output, key=lambda x: int(x[3:]))
 if args.output_atoms:
         if args.output_file:
                 with open(args.output_file, "w") as f:
-                        f.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n")
+                        f.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n\n")
                         for atom in prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values:
                                f.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
 
@@ -108,11 +106,11 @@ if args.output_atoms:
 else:
         if args.output_file:
                 with open(args.output_file, "w") as f:
-                        f.write(f"RESIDUE:\n")
+                        f.write(f"RESIDUE:\n\n")
                         for residue in residues_output:
                                 f.write(residue+"\n")
         else:
-                sys.stdout.write(f"RESIDUE:\n")
+                sys.stdout.write(f"RESIDUE:\n\n")
                 for residue in residues_output:
                         sys.stdout.write(residue+"\n")
 

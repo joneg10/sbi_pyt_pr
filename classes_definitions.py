@@ -5,7 +5,7 @@ import math
 
 class StructureAnalysis:
     column_names = ['b_factor', 'sasa', 'aliphatic', 'aromatic', 'donor', 'acceptor',
-       'don_acc', 'CD', 'totalC', 'NZ', 'totalN', 'CD1', 'CG', 'OE2', 'totalO',
+       'don_acc', 'charge', 'CD', 'totalC', 'NZ', 'totalN', 'CD1', 'CG', 'OE2', 'totalO',
        'CD2', 'OE1', 'CB', 'N', 'C', 'O', 'CA', 'OG1', 'CG2',
        'environment_density', 'CZ', 'NE', 'NH1', 'CE1', 'CE', 'NH2', 'CE2',
        'OD1', 'ND2', 'CG1', 'SG', 'totalS', 'SD', 'CZ3', 'CH2', 'CZ2', 'CE3',
@@ -98,7 +98,6 @@ class StructureAnalysis:
                             
 
                             # Count the total number of atoms of each element
-                    
 
                             if str("total"+nearby_atom.element) in atom_counts:
                                 atom_counts["total"+nearby_atom.element] += 1
@@ -113,8 +112,8 @@ class StructureAnalysis:
 
                             # Calculate the features of the atom
                             if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
+                                # This is a counter for each atom is it is aliphatic, aromatic, donor, acceptor or donor_acceptor.
                                 atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
-
 
                             if nearby_atom.get_id() == "N":
                                 atom_counts["donor"] +=1
@@ -123,9 +122,11 @@ class StructureAnalysis:
                                 atom_counts["acceptor"] +=1
 
                             if nearby_atom.get_id() == "C":
-                                atom_counts["aromatic"] +=1
-                            
 
+                                atom_counts["aromatic"] +=1
+                                
+                            if (nearby_atom.get_id() in list(atom_dict.charges[nearby_atom.get_parent().get_resname().capitalize()].keys())) and (nearby_atom.get_parent().get_resname().capitalize() in list(atom_dict.charges.keys())):
+                                atom_counts["charge"] += atom_dict.charges[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]
                         atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
                         
                         # create label of atom in lbs
@@ -217,7 +218,12 @@ class StructureAnalysis:
 
                         if nearby_atom.get_id() == "C":
                             atom_counts["aromatic"] +=1
+
+                    # Calculate charges:
                         
+                        if (nearby_atom.get_id() in list(atom_dict.charges[nearby_atom.get_parent().get_resname().capitalize()].keys())) and (nearby_atom.get_parent().get_resname().capitalize() in list(atom_dict.charges.keys())):
+                            atom_counts["charge"] += atom_dict.charges[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]
+
                         atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
                         
                         # create label of atom in lbs

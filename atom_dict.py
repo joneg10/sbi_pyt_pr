@@ -19,4 +19,9 @@ characteristics =  {"Ala":{"CB": "aliphatic"},
                     "Val":{"CB":"aliphatic", "CG1":"aliphatic", "CG2":"aliphatic"},
                     "Gly":{}}
 
-# don_acc, donor, acceptor and aromatic types.
+charges =  {"Arg":{"NE": 0.33, "NH1": 0.33, "NH2": 0.33},
+                    "Asp":{"OD1":-0.5, "OD2":-0.5},
+                    "Glu":{"OE1":-0.5, "OE2":-0.5},
+                    "His":{ "ND1":1},
+                    "Lys":{"NZ":1}}
+
