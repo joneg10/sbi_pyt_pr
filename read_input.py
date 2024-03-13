@@ -51,7 +51,7 @@ parser.add_argument('-o', '--output',
 
 args = parser.parse_args()
 
-input_structure = StructureAnalysis("../pdb_ids/1B42.pdb")
+input_structure = StructureAnalysis("../pdb_ids/1b42.pdb")
 
 environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
 

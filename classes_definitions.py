@@ -125,8 +125,13 @@ class StructureAnalysis:
 
                                 atom_counts["aromatic"] +=1
                                 
-                            if (nearby_atom.get_id() in list(atom_dict.charges[nearby_atom.get_parent().get_resname().capitalize()].keys())) and (nearby_atom.get_parent().get_resname().capitalize() in list(atom_dict.charges.keys())):
-                                atom_counts["charge"] += atom_dict.charges[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]
+                            resname = nearby_atom.get_parent().get_resname().capitalize()
+                            if resname in atom_dict.charges and nearby_atom.get_id() in atom_dict.charges[resname]:
+                                atom_counts["charge"] += atom_dict.charges[resname][nearby_atom.get_id()]
+                       
+                       
+                        
+                        
                         atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
                         
                         # create label of atom in lbs
@@ -207,7 +212,8 @@ class StructureAnalysis:
 
                         # Calculate the features of the atom
                         if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
-                            atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
+                                # This is a counter for each atom is it is aliphatic, aromatic, donor, acceptor or donor_acceptor.
+                                atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
 
 
                         if nearby_atom.get_id() == "N":
@@ -221,9 +227,11 @@ class StructureAnalysis:
 
                     # Calculate charges:
                         
-                        if (nearby_atom.get_id() in list(atom_dict.charges[nearby_atom.get_parent().get_resname().capitalize()].keys())) and (nearby_atom.get_parent().get_resname().capitalize() in list(atom_dict.charges.keys())):
-                            atom_counts["charge"] += atom_dict.charges[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]
-
+                        resname = nearby_atom.get_parent().get_resname().capitalize()
+                        if resname in atom_dict.charges and nearby_atom.get_id() in atom_dict.charges[resname]:
+                            atom_counts["charge"] += atom_dict.charges[resname][nearby_atom.get_id()]
+                       
+                       
                         atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
                         
                         # create label of atom in lbs
