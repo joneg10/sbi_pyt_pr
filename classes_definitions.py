@@ -10,6 +10,7 @@ class StructureAnalysis:
        'environment_density', 'CZ', 'NE', 'NH1', 'CE1', 'CE', 'NH2', 'CE2',
        'OD1', 'ND2', 'CG1', 'SG', 'totalS', 'SD', 'CZ3', 'CH2', 'CZ2', 'CE3',
        'NE1', 'OD2', 'OH', 'OG', 'NE2', 'ND1']
+    
         
     def __init__(self, pdb_file):
         
@@ -19,6 +20,8 @@ class StructureAnalysis:
         self.ns = NeighborSearch(list(self.structure.get_atoms()))
         self.sr = ShrakeRupley()
         self.sasa = self.sr.compute(self.structure, level = 'A')
+
+
 
     def get_ligands_from_structure(self):
         '''Returns list of ligands in the structure'''
@@ -72,89 +75,93 @@ class StructureAnalysis:
             
                 if residue.get_resname() not in ligand_names and residue.get_resname() != 'HOH':  # Exclude water residues and ligand residues
                     for selected_atom in residue.get_atoms():
-                        nearby_atoms = self.ns.search(selected_atom.coord, radio)  # Change the radius if needed
 
-                        # Filter nearby atoms that are not water and are not in residues of ligand_names
-                        nearby_atoms = [atom for atom in nearby_atoms if atom.get_parent().get_resname() != 'HOH' and atom.get_parent().get_resname() not in ligand_names]
-                        
-                        # Initialize the atom counts and counter outside of the loop
-                        atom_counts = {}
-                        atom_counter = 0
-                        
-                        # set column names
-                        
-                        for i in self.column_names:
-                            atom_counts[i] = 0
+                        # only  take into account atoms that are exposed to solvent
 
-                        for nearby_atom in nearby_atoms:
-                            atom_counter += 1
+                        if selected_atom.sasa > 0:
+                            nearby_atoms = self.ns.search(selected_atom.coord, radio)  # Change the radius if needed
+
+                            # Filter nearby atoms that are not water and are not in residues of ligand_names
+                            nearby_atoms = [atom for atom in nearby_atoms if atom.get_parent().get_resname() != 'HOH' and atom.get_parent().get_resname() not in ligand_names]
                             
-                            # Count the number of atoms of each type
-                            if nearby_atom.get_id() in atom_counts:
-                                atom_counts[nearby_atom.get_id()] += 1
-                            else:
-                                atom_counts[nearby_atom.get_id()] = 1
+                            # Initialize the atom counts and counter outside of the loop
+                            atom_counts = {}
+                            atom_counter = 0
                             
+                            # set column names
+                            
+                            for i in self.column_names:
+                                atom_counts[i] = 0
 
-                            # Count the total number of atoms of each element
-
-                            if str("total"+nearby_atom.element) in atom_counts:
-                                atom_counts["total"+nearby_atom.element] += 1
-                            else:
-                                atom_counts["total"+nearby_atom.element] = 1
-                        
-                            # Count the total number of atoms
-                        
-                            atom_counts["b_factor"] += nearby_atom.get_bfactor()
-
-                            atom_counts["sasa"] += nearby_atom.sasa
-
-                            # Calculate the features of the atom
-                            if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
-                                # This is a counter for each atom is it is aliphatic, aromatic, donor, acceptor or donor_acceptor.
-                                atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
-
-                            if nearby_atom.get_id() == "N":
-                                atom_counts["donor"] +=1
-
-                            if nearby_atom.get_id() == "O":
-                                atom_counts["acceptor"] +=1
-
-                            if nearby_atom.get_id() == "C":
-
-                                atom_counts["aromatic"] +=1
+                            for nearby_atom in nearby_atoms:
+                                atom_counter += 1
                                 
-                            resname = nearby_atom.get_parent().get_resname().capitalize()
-                            if resname in atom_dict.charges and nearby_atom.get_id() in atom_dict.charges[resname]:
-                                atom_counts["charge"] += atom_dict.charges[resname][nearby_atom.get_id()]
-                       
-                       
-                        
-                        
-                        atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
-                        
-                        # create label of atom in lbs
+                                # Count the number of atoms of each type
+                                if nearby_atom.get_id() in atom_counts:
+                                    atom_counts[nearby_atom.get_id()] += 1
+                                else:
+                                    atom_counts[nearby_atom.get_id()] = 1
+                                
 
-                        atom_proportions["environment_density"] = atom_counter/sphere_volume
+                                # Count the total number of atoms of each element
 
-                        if selected_atom.get_serial_number() in serial_numbers_lbs:
-                            atom_proportions["is_lbs"] = 1
-
-                        else:
-                            atom_proportions["is_lbs"] = 0
-
-
-                        # use a chimera recognisable code as key 
+                                if str("total"+nearby_atom.element) in atom_counts:
+                                    atom_counts["total"+nearby_atom.element] += 1
+                                else:
+                                    atom_counts["total"+nearby_atom.element] = 1
                             
-                        chimera_code = ":" + str(residue.get_id()[1]) + "@" + selected_atom.get_name()
-                        environments[chimera_code] = atom_proportions
+                                # Count the total number of atoms
+                            
+                                atom_counts["b_factor"] += nearby_atom.get_bfactor()
 
-            return environments
+                                atom_counts["sasa"] += nearby_atom.sasa
+
+                                # Calculate the features of the atom
+                                if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
+                                    # This is a counter for each atom is it is aliphatic, aromatic, donor, acceptor or donor_acceptor.
+                                    atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
+
+                                if nearby_atom.get_id() == "N":
+                                    atom_counts["donor"] +=1
+
+                                if nearby_atom.get_id() == "O":
+                                    atom_counts["acceptor"] +=1
+
+                                if nearby_atom.get_id() == "C":
+
+                                    atom_counts["aromatic"] +=1
+                                    
+                                resname = nearby_atom.get_parent().get_resname().capitalize()
+                                if resname in atom_dict.charges and nearby_atom.get_id() in atom_dict.charges[resname]:
+                                    atom_counts["charge"] += atom_dict.charges[resname][nearby_atom.get_id()]
+                        
+                        
+                            
+                            
+                            atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
+                            
+                            # create label of atom in lbs
+
+                            atom_proportions["environment_density"] = atom_counter/sphere_volume
+
+                            if selected_atom.get_serial_number() in serial_numbers_lbs:
+                                atom_proportions["is_lbs"] = 1
+
+                            else:
+                                atom_proportions["is_lbs"] = 0
+
+
+                            # use a chimera recognisable code as key 
+                                
+                            chimera_code = ":" + str(residue.get_id()[1]) + "@" + selected_atom.get_name()
+                            environments[chimera_code] = atom_proportions
+
+                return environments
+                
+            else:
+                print("No ligand names provided")
+                return None
             
-        else:
-            print("No ligand names provided")
-            return None
-        
 
 
 
