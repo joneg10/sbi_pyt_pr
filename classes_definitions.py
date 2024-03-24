@@ -7,9 +7,9 @@ class StructureAnalysis:
     column_names = ['b_factor', 'sasa', 'aliphatic', 'aromatic', 'donor', 'acceptor',
        'don_acc', 'charge', 'CG', 'totalC', 'ND2', 'totalN', 'OE2', 'totalO',
        'CD', 'OG1', 'CG2', 'CB', 'CA', 'N', 'C', 'CD2', 'CE2', 'CD1', 'OE1',
-       'O', 'CE', 'SD', 'totalS', 'environment_density', 'is_lbs', 'CZ', 'NZ',
-       'OH', 'CE1', 'CG1', 'OD1', 'NE2', 'NH1', 'OD2', 'OG', 'NH2', 'NE',
-       'ND1', 'SG', 'NE1', 'CH2', 'CZ2', 'CE3', 'CZ3']
+       'O', 'CE', 'SD', 'totalS', 'environment_density', 'CZ', 'NZ', 'OH',
+       'CE1', 'CG1', 'OD1', 'NE2', 'NH1', 'OD2', 'OG', 'NH2', 'NE', 'ND1',
+       'SG', 'NE1', 'CH2', 'CZ2', 'CE3', 'CZ3']
     
         
     def __init__(self, pdb_file):

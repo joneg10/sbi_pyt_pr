@@ -1,5 +1,5 @@
 import argparse
-from classes_definitions import *
+from copy_of_classes import *
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -19,6 +19,8 @@ mean = torch.tensor([3.4345e+01, 2.6304e+00, 1.8431e-01, 2.1410e-01, 1.6560e-01,
         6.7290e-03, 5.1975e-03, 6.0932e-03, 7.0248e-03, 5.1333e-03, 5.5515e-03,
         3.3838e-03, 2.1583e-03, 1.8184e-03, 1.8373e-03, 1.7867e-03, 1.8270e-03,
         1.8448e-03])
+
+
 
 std = torch.tensor([2.2123e+01, 2.8879e+00, 9.8564e-02, 8.3486e-02, 4.3713e-02, 4.6114e-02,
         1.9261e-02, 2.2521e-02, 2.9928e-02, 8.8976e-02, 1.0895e-02, 4.4829e-02,
@@ -55,11 +57,12 @@ parser.add_argument('-o', '--output',
 
 args = parser.parse_args()
 
-input_structure = StructureAnalysis("../pdb_ids/1b42.pdb")
+input_structure = StructureAnalysis(pdb_file=args.pdb_file)
 
 environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
 
 columns_to_drop = [col for col in environment_df.columns if col not in StructureAnalysis.column_names and col != "residue"]
+
 environment_df.drop(columns_to_drop, axis=1, inplace=True)
 
 residue_col = environment_df.pop("residue")
@@ -70,16 +73,17 @@ X_to_predict_normalized = (X_to_predict - mean) / std
 ### predict
 
 model = nn.Sequential(
-    nn.Linear(49, 72),
+    nn.Linear(49, 74),
     nn.ReLU(),
-    nn.Linear(72, 49),
+    nn.Linear(74, 49),
     nn.ReLU(),
-    nn.Linear(49, 1),
+    nn.Linear(49, 25),
+    nn.ReLU(),
+    nn.Linear(25, 1),
     nn.Sigmoid()
 )
 
-
-model.load_state_dict(torch.load("neural_network.pytorch"))
+model.load_state_dict(torch.load("neural_network_2403_more_layers.pytorch"))
 
 
 
@@ -127,6 +131,8 @@ if args.open_chimera:
                 f.write(f'open {args.pdb_file}\n')  # Open your PDB file
                 f.write(f'select {atoms_to_select}\n')  # Select the atom
                 f.write('color red sel\n')  # Color the selected atom red
+                #f.write('surf sel\n')  # Color the selected atom red
+                
                 f.flush()
 
                 # Run Chimera with the temporary file

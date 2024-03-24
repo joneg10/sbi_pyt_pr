@@ -137,17 +137,17 @@ torch.save(model.state_dict(), "neural_network_2403_more_layers.pytorch")
 
 # Assuming y_test are 
 
-model = nn.Sequential(
-    nn.Linear(49, 74),
-    nn.ReLU(),
-    nn.Linear(74, 49),
-    nn.ReLU(),
-    nn.Linear(49, 1),
-    nn.Sigmoid()
-)
+# model = nn.Sequential(
+#     nn.Linear(49, 74),
+#     nn.ReLU(),
+#     nn.Linear(74, 49),
+#     nn.ReLU(),
+#     nn.Linear(49, 1),
+#     nn.Sigmoid()
+# )
 
-model.load_state_dict(torch.load("neural_network_2403.pytorch"))
-model.state_dict()
+# model.load_state_dict(torch.load("neural_network_2403.pytorch"))
+# model.state_dict()
 prediction = model(X_test_normalized)
 
 # Compute the ROC curve
@@ -167,7 +167,7 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.show()
-# ...
+
 
 # Evaluate model on test set
 model.eval()
