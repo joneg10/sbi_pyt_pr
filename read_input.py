@@ -66,11 +66,11 @@ X_to_predict_normalized = (X_to_predict - mean) / std
 ### predict
 
 model = nn.Sequential(
-    nn.Linear(48, 72),
+    nn.Linear(49, 72),
     nn.ReLU(),
-    nn.Linear(72, 48),
+    nn.Linear(72, 49),
     nn.ReLU(),
-    nn.Linear(48, 1),
+    nn.Linear(49, 1),
     nn.Sigmoid()
 )
 
