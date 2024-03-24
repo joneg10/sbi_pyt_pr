@@ -4,7 +4,7 @@ import torch.nn as nn
 import pandas as pd
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
-from read_input_class_inherit import *
+from create_training_set_inheritance import *
 from sklearn.preprocessing import StandardScaler
 from torch.optim.lr_scheduler import ExponentialLR
 from sklearn.metrics import roc_curve, roc_auc_score, auc
