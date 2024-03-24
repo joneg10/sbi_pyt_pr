@@ -4,7 +4,7 @@ import torch.nn as nn
 import pandas as pd
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
-from create_training_set_inheritance import *
+from create_training_set import TrainingSet
 from sklearn.preprocessing import StandardScaler
 from torch.optim.lr_scheduler import ExponentialLR
 from sklearn.metrics import roc_curve, roc_auc_score, auc
@@ -18,12 +18,13 @@ import matplotlib.pyplot as plt
 # data.fillna(0, inplace=True)
 
 # From TrainingSet class to format the training set from pdb files, still too computational expensive to run in the server:
-paths = TrainingSet("./pdbs_train")
+paths = TrainingSet("../scpdb_files_1000")
+
 training_set = paths.get_formated_set()
 training_set.fillna(0, inplace=True)
 
 # I wanted to save it to parquet to avoid running the previous code again
-output_file = '../trainingSet.parquet'
+output_file = '../trainingSet_20240324.parquet'
 training_set.to_parquet(output_file)
 
 # Set "is_lbs" as the last column
@@ -41,7 +42,7 @@ Y = num_training_set[:, -1]
 X = torch.tensor(X, dtype=torch.float32)
 Y = torch.tensor(Y, dtype=torch.float32).reshape(-1, 1)
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=42)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=111)
 
 mean = torch.mean(X_train, dim=0)
 std = torch.std(X_train, dim=0)
@@ -79,7 +80,7 @@ early_stop_counter = 0
 # training
 
 n_epochs = 100
-batch_size = 34
+batch_size = 32
  
 for epoch in range(n_epochs):
     model.train()
@@ -121,7 +122,7 @@ print(f"Test loss: {test_loss}")
 
 model.state_dict()
 
-torch.save(model.state_dict(), "neural_network_1303_2.pytorch")
+torch.save(model.state_dict(), "neural_network_2403.pytorch")
 
 
 
@@ -133,18 +134,18 @@ torch.save(model.state_dict(), "neural_network_1303_2.pytorch")
 
 ## ROC
 
-# Assuming y_test are your true binary labels and prediction are your model's predictions
+# Assuming y_test are 
 
-model = nn.Sequential(
-    nn.Linear(49, 74),
-    nn.ReLU(),
-    nn.Linear(74, 49),
-    nn.ReLU(),
-    nn.Linear(49, 1),
-    nn.Sigmoid()
-)
+# model = nn.Sequential(
+#     nn.Linear(49, 74),
+#     nn.ReLU(),
+#     nn.Linear(74, 49),
+#     nn.ReLU(),
+#     nn.Linear(49, 1),
+#     nn.Sigmoid()
+# )
 
-model.load_state_dict(torch.load("neural_network_1303_2.pytorch"))
+# model.load_state_dict(torch.load("neural_network_1303_2.pytorch"))
 
 prediction = model(X_test_normalized)
 
@@ -172,6 +173,6 @@ model.eval()
 with torch.no_grad():
     Y_pred_test = model(torch.tensor(X_test_normalized, dtype=torch.float32))
     test_loss = loss_fn(Y_pred_test, torch.tensor(Y_test, dtype=torch.float32).reshape(-1, 1))
-    Y_pred_test_binary = (Y_pred_test >= 0.2).float() # threshold ¿?¿?¿?¿
+    Y_pred_test_binary = (Y_pred_test >= 0.5).float() # threshold ¿?¿?¿?¿
     report = classification_report(Y_test, Y_pred_test_binary)
     print(report)

@@ -1,7 +1,7 @@
 from Bio.PDB import *
 import pandas as pd
 import matplotlib.pyplot as plt 
-from classes_definitions import *
+from copy_of_classes import *
 import os
 from Bio.PDB.SASA import ShrakeRupley
 import sys
@@ -11,6 +11,7 @@ import fastparquet
 
 class TrainingSet(StructureAnalysis):
         def __init__(self, pdb_path):
+
             self.pdb_path = pdb_path
 
         def get_pdb_files(self):

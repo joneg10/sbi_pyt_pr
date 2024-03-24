@@ -1,12 +1,15 @@
 from Bio.PDB import *
 import pandas as pd
 import matplotlib.pyplot as plt 
-from classes_definitions import *
+from copy_of_classes import *
 import os
 from Bio.PDB.SASA import ShrakeRupley
 import sys
 import pandas as pd
-import fastparquet
+
+
+
+
 
 
 class TrainingSet:
@@ -18,10 +21,16 @@ class TrainingSet:
             return pdb_files
 
         def get_formated_set(self):
+            
             result_df = pd.DataFrame()
+            file_counter = 1
+
+
             for pdb in self.get_pdb_files():
+                sys.stdout.write(f'Processing file {pdb}\n')
                 analysis = StructureAnalysis(pdb)
                 if len(analysis.get_ligands_from_structure()) > 0:
+                    
                     env = analysis.get_structure_environments()
                     df = pd.DataFrame.from_dict(env, orient='index')
 
@@ -38,7 +47,11 @@ class TrainingSet:
                         # Append the DataFrame to the result DataFrame
                         result_df = result_df._append(df)
 
-                    sys.stdout.write(f'File {pdb} processed\n ') 
+                        sys.stdout.write(f'File {pdb} processed\n ')
+                        sys.stdout.write(f"File {file_counter} of {len(self.get_pdb_files())}\n") 
+                        file_counter += 1
+                        
+                    
             return result_df   
                         
 
