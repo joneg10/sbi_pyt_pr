@@ -57,10 +57,11 @@ model = nn.Sequential(
     nn.ReLU(),
     nn.Linear(74, 49),
     nn.ReLU(),
-    nn.Linear(49, 1),
+    nn.Linear(49, 25),
+    nn.ReLU(),
+    nn.Linear(25, 1),
     nn.Sigmoid()
 )
-
 
 
 loss_fn = nn.BCELoss()
@@ -122,7 +123,7 @@ print(f"Test loss: {test_loss}")
 
 model.state_dict()
 
-torch.save(model.state_dict(), "neural_network_2403.pytorch")
+torch.save(model.state_dict(), "neural_network_2403_more_layers.pytorch")
 
 
 
@@ -136,17 +137,17 @@ torch.save(model.state_dict(), "neural_network_2403.pytorch")
 
 # Assuming y_test are 
 
-# model = nn.Sequential(
-#     nn.Linear(49, 74),
-#     nn.ReLU(),
-#     nn.Linear(74, 49),
-#     nn.ReLU(),
-#     nn.Linear(49, 1),
-#     nn.Sigmoid()
-# )
+model = nn.Sequential(
+    nn.Linear(49, 74),
+    nn.ReLU(),
+    nn.Linear(74, 49),
+    nn.ReLU(),
+    nn.Linear(49, 1),
+    nn.Sigmoid()
+)
 
-# model.load_state_dict(torch.load("neural_network_1303_2.pytorch"))
-
+model.load_state_dict(torch.load("neural_network_2403.pytorch"))
+model.state_dict()
 prediction = model(X_test_normalized)
 
 # Compute the ROC curve
@@ -176,3 +177,4 @@ with torch.no_grad():
     Y_pred_test_binary = (Y_pred_test >= 0.5).float() # threshold ¿?¿?¿?¿
     report = classification_report(Y_test, Y_pred_test_binary)
     print(report)
+
