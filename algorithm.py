@@ -18,19 +18,19 @@ import matplotlib.pyplot as plt
 # data.fillna(0, inplace=True)
 
 # From TrainingSet class to format the training set from pdb files, still too computational expensive to run in the server:
-paths = TrainingSet("../scpdb_files_1000")
+paths = TrainingSet("../scpdb_files_2000")
 
 training_set = paths.get_formated_set()
 training_set.fillna(0, inplace=True)
 
 # I wanted to save it to parquet to avoid running the previous code again
-output_file = '../trainingSet_20240324.parquet'
+output_file = '../trainingSet_20240325.parquet'
 training_set.to_parquet(output_file)
 
 # Set "is_lbs" as the last column
 training_set["is_lbs"] = training_set.pop("is_lbs")
 
-training_set = pd.read_parquet('./trainingSet.parquet')
+training_set = pd.read_parquet('../trainingSet_20240325.parquet')
 ### Neural network ###
 
 # Define the model
@@ -53,11 +53,11 @@ X_test_normalized = (X_test - mean) / std
 
 
 model = nn.Sequential(
-    nn.Linear(49, 74),
+    nn.Linear(50, 74),
     nn.ReLU(),
-    nn.Linear(74, 49),
+    nn.Linear(74, 50),
     nn.ReLU(),
-    nn.Linear(49, 25),
+    nn.Linear(50, 25),
     nn.ReLU(),
     nn.Linear(25, 1),
     nn.Sigmoid()
@@ -123,7 +123,7 @@ print(f"Test loss: {test_loss}")
 
 model.state_dict()
 
-torch.save(model.state_dict(), "neural_network_2403_more_layers.pytorch")
+torch.save(model.state_dict(), "neural_network_2503_1988_pdbs.pytorch")
 
 
 
@@ -137,17 +137,17 @@ torch.save(model.state_dict(), "neural_network_2403_more_layers.pytorch")
 
 # Assuming y_test are 
 
-# model = nn.Sequential(
-#     nn.Linear(49, 74),
-#     nn.ReLU(),
-#     nn.Linear(74, 49),
-#     nn.ReLU(),
-#     nn.Linear(49, 1),
-#     nn.Sigmoid()
-# )
+model = nn.Sequential(
+    nn.Linear(50, 74),
+    nn.ReLU(),
+    nn.Linear(74, 50),
+    nn.ReLU(),
+    nn.Linear(50, 1),
+    nn.Sigmoid()
+)
 
-# model.load_state_dict(torch.load("neural_network_2403.pytorch"))
-# model.state_dict()
+model.load_state_dict(torch.load("neural_network_2503_1988_pdbs.pytorch"))
+model.state_dict()
 prediction = model(X_test_normalized)
 
 # Compute the ROC curve
