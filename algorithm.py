@@ -12,28 +12,36 @@ from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
 
 
+###############################################
+### Creation of formatting training dataset ###
+###############################################
 
-
-# data = pd.read_csv('../output.csv' , na_values = 0 , sep = "," , )
-# data.fillna(0, inplace=True)
-
-# From TrainingSet class to format the training set from pdb files, still too computational expensive to run in the server:
+# Select path where PDB files are
 paths = TrainingSet("../scpdb_files_2000")
 
+# Get the training set
 training_set = paths.get_formated_set()
+
+# Fill NaN values with 0
 training_set.fillna(0, inplace=True)
 
-# I wanted to save it to parquet to avoid running the previous code again
+# Save the training set to a parquet file
 output_file = '../trainingSet_20240325.parquet'
+ 
 training_set.to_parquet(output_file)
+
+
+# Load the training set
+training_set = pd.read_parquet('../trainingSet_20240325.parquet')
+
 
 # Set "is_lbs" as the last column
 training_set["is_lbs"] = training_set.pop("is_lbs")
 
-training_set = pd.read_parquet('../trainingSet_20240325.parquet')
-### Neural network ###
 
-# Define the model
+
+
+# Convert the training set to a numpy array, and then to torch tensor
 
 num_training_set = np.array(training_set)
 X = num_training_set[:, :-1]
@@ -42,8 +50,10 @@ Y = num_training_set[:, -1]
 X = torch.tensor(X, dtype=torch.float32)
 Y = torch.tensor(Y, dtype=torch.float32).reshape(-1, 1)
 
+# Split the data into training and test sets
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=111)
 
+# Normalize the data using the mean and standard deviation of the training set
 mean = torch.mean(X_train, dim=0)
 std = torch.std(X_train, dim=0)
 
@@ -52,6 +62,12 @@ X_test_normalized = (X_test - mean) / std
 
 
 
+
+######################
+### Neural network ###
+######################
+
+# Define the model
 model = nn.Sequential(
     nn.Linear(50, 74),
     nn.ReLU(),
@@ -64,6 +80,8 @@ model = nn.Sequential(
 )
 
 
+# Define the loss function and optimizer
+
 loss_fn = nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.005)
 
@@ -72,13 +90,14 @@ optimizer = optim.Adam(model.parameters(), lr=0.005)
 # Use learning rate scheduler
 scheduler = ExponentialLR(optimizer, gamma=0.95)
 
-# training loop with learning rate scheduler and early stopping
+# Define early stopping parameters
+
 best_loss = float('inf')
-patience = 5
+patience = 10
 early_stop_counter = 0
 
 
-# training
+# Training loop with early stopping
 
 n_epochs = 100
 batch_size = 32
@@ -115,6 +134,7 @@ for epoch in range(n_epochs):
             break
 
 # Evaluate model on test set
+        
 model.eval()
 with torch.no_grad():
     Y_pred_test = model(torch.tensor(X_test_normalized, dtype=torch.float32))
@@ -123,7 +143,8 @@ print(f"Test loss: {test_loss}")
 
 model.state_dict()
 
-torch.save(model.state_dict(), "neural_network_2503_1988_pdbs.pytorch")
+# Save the model
+torch.save(model.state_dict(), "neural_network_2503_1988_pdbs_martin_adagrad.pytorch")
 
 
 
@@ -133,7 +154,7 @@ torch.save(model.state_dict(), "neural_network_2503_1988_pdbs.pytorch")
 
 
 
-## ROC
+## Load neural network model from state dict and assess model
 
 # Assuming y_test are 
 
@@ -142,11 +163,15 @@ model = nn.Sequential(
     nn.ReLU(),
     nn.Linear(74, 50),
     nn.ReLU(),
-    nn.Linear(50, 1),
+    nn.Linear(50, 25),
+    nn.ReLU(),
+    nn.Linear(25, 1),
     nn.Sigmoid()
 )
 
-model.load_state_dict(torch.load("neural_network_2503_1988_pdbs.pytorch"))
+
+
+model.load_state_dict(torch.load("neural_network_2503_1988_pdbs_martin.pytorch"))
 model.state_dict()
 prediction = model(X_test_normalized)
 
@@ -167,6 +192,7 @@ plt.ylabel('True Positive Rate')
 plt.title('Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.show()
+
 
 
 # Evaluate model on test set

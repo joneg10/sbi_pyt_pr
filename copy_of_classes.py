@@ -1,3 +1,17 @@
+"""
+This module provides classes and methods for analyzing protein structures.
+
+Attributes:
+    column_names (list): List of column names for the structure analysis.
+
+Methods:
+    __init__(pdb_file): Initializes the StructureAnalysis object with a PDB file.
+    get_ligands_from_structure(): Returns a list of ligands in the structure.
+    get_ligand_binding_site_atoms(): Returns a list of atoms in the ligand binding site.
+    get_structure_environments(): Samples the atoms of the structure, computing the features of the environment of each atom.
+    get_input_environments(): Returns a dictionary of environments of each residue in the structure of the input PDB file.
+"""
+
 from Bio.PDB import PDBParser, NeighborSearch
 from Bio.PDB.SASA import ShrakeRupley
 import atom_dict
@@ -6,16 +20,23 @@ import random
 
 
 class StructureAnalysis:
+
+
     column_names = ['b_factor', 'sasa', 'aliphatic', 'aromatic', 'donor', 'acceptor',
        'don_acc', 'charge', 'CG', 'totalC', 'ND2', 'totalN', 'OE2', 'totalO',
        'CD', 'OG1', 'CG2', 'CB', 'CA', 'N', 'C', 'CD2', 'CE2', 'CD1', 'OE1',
-       'O', 'CE', 'SD', 'totalS', 'environment_density', 'CZ', 'NZ',
-       'OH', 'CE1', 'CG1', 'OD1', 'NE2', 'NH1', 'OD2', 'OG', 'NH2', 'NE',
-       'ND1', 'SG', 'NE1', 'CH2', 'CZ2', 'CE3', 'CZ3']
+       'O', 'CE', 'SD', 'totalS', 'environment_density', 'CZ', 'NZ', 'OH',
+       'CE1', 'CG1', 'OD1', 'NE2', 'NH1', 'OD2', 'OG', 'NH2', 'NE', 'ND1',
+       'SG', 'NE1', 'CH2', 'CZ2', 'CE3', 'CZ3', 'OXT']
     
         
     def __init__(self, pdb_file):
-        
+        """
+        Initializes the StructureAnalysis object with a PDB file.
+
+        Args:
+            pdb_file (str): Path to the PDB file.
+        """
         parser = PDBParser()
         self.structure = parser.get_structure('structure', pdb_file)
         self.standard_residues = ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL']
@@ -26,7 +47,12 @@ class StructureAnalysis:
 
 
     def get_ligands_from_structure(self):
-        '''Returns list of ligands in the structure'''
+        """
+        Returns a list of ligands in the structure.
+
+        Returns:
+            list: List of ligands in the structure.
+        """
         ligand_residues = []
 
         for residue in self.structure.get_residues():
@@ -39,7 +65,12 @@ class StructureAnalysis:
 
 
     def get_ligand_binding_site_atoms(self):
-        '''Returns list of atoms in the ligand binding site'''
+        """
+        Returns a list of atoms in the ligand binding site.
+
+        Returns:
+            list: List of atoms in the ligand binding site.
+        """
     
         list_of_ligands = self.get_ligands_from_structure() # get ligands from the structure
         ligand_binding_site_atoms = []
@@ -68,18 +99,19 @@ class StructureAnalysis:
 
 
     def get_structure_environments(self):
-        '''Samples the atoms of the structure, computing the features of the environment of each atom. 
-        Designed to create the training set, sampling as many atoms from non-ligand-binding residues as from ligand-binding residues.'''
+        """
+        Samples the atoms of the structure, computing the features of the environment of each atom.
+        Designed to create the training set, sampling as many atoms from non-ligand-binding residues as from ligand-binding residues.
 
-
+        Returns:
+            dict: Dictionary of environments for each atom in the structure.
+        """
         # Get the ligands from the structure
         ligand_names = self.get_ligands_from_structure()
 
 
         # Check if there are ligands in the structure
         if len(ligand_names) > 0:
-
-
 
             # Get the atoms in the ligand binding site
             ligand_binding_atoms = self.get_ligand_binding_site_atoms()
@@ -99,8 +131,6 @@ class StructureAnalysis:
             random.seed(1)
             non_lbs_atoms = random.sample(non_lbs_atoms, len(serial_numbers_lbs))
 
-
-
             # Initialize the dictionary of environments
             environments = {}
 
@@ -108,8 +138,6 @@ class StructureAnalysis:
             radio = 6.2
             # Calculate the volume of the sphere
             sphere_volume = 4/3 * math.pi * radio**3
-
-
 
             mycounter = 0
             for residue in self.structure.get_residues():
@@ -128,9 +156,6 @@ class StructureAnalysis:
                             # Initialize the atom counts and counter outside of the loop
                             atom_counts = {}
                             atom_counter = 0
-
-                            
-                            # set column names
 
                             for i in self.column_names:
                                 atom_counts[i] = 0
@@ -156,9 +181,7 @@ class StructureAnalysis:
 
                                 # Calculate the features of the atom
                                 if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
-                                    # This is a counter for each atom is it is aliphatic, aromatic, donor, acceptor or donor_acceptor.
                                     atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
-
 
                                 # include atoms from the peptide bond 
                                     
@@ -206,14 +229,19 @@ class StructureAnalysis:
 
 
     def get_input_environments(self):
-        '''Returns dictionary of environments of each residue in the structure of the input PDB file'''
+        """
+        Returns a dictionary of environments of each residue in the structure of the input PDB file.
+
+        Returns:
+            dict: Dictionary of environments for each residue in the structure.
+        """
         environments = {}
         radio = 6.2
         sphere_volume = 4/3 * math.pi * radio**3
 
         for residue in self.structure.get_residues():
             
-            if residue.get_resname() in self.standard_residues:  # Just include standard residues. 
+            if residue.get_resname() in self.standard_residues:  # Just include standard residues.
                 for selected_atom in residue.get_atoms():
                     nearby_atoms = self.ns.search(selected_atom.coord, radio)  # Change the radius if needed
 
