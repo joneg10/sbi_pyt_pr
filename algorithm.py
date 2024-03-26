@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import ExponentialLR
 from sklearn.metrics import roc_curve, roc_auc_score, auc
 from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
-
+from torchviz import make_dot
 
 ###############################################
 ### Creation of formatting training dataset ###
@@ -204,3 +204,13 @@ with torch.no_grad():
     report = classification_report(Y_test, Y_pred_test_binary)
     print(report)
 
+
+# Get image of the model
+    
+
+# Get image of the model
+output_to_plot = model(X_test_normalized)
+
+dot = make_dot(output_to_plot, params=dict(model.named_parameters()))
+dot.format = 'png'
+dot.render('../model')
