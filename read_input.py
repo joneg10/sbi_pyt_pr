@@ -1,5 +1,5 @@
 import argparse
-from copy_of_classes import *
+from environment_classes import *
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
         
 
-        model.load_state_dict(torch.load("neural_network_2503_1988_pdbs_martin.pytorch"))
+        model.load_state_dict(torch.load("neural_network_2603_1988_pdbs_6.2A.pytorch"))
 
 
 
@@ -120,10 +120,12 @@ if __name__ == "__main__":
                 # Open Chimera
                 if args.open_chimera:
                         with tempfile.NamedTemporaryFile(mode='w', delete=True, suffix='.cmd', dir=".") as f:
-                                f.write(f'open {args.pdb_file}\n')  # Open your PDB file
+                                f.write(f'open {input_pdb}\n')  # Open your PDB file
                                 f.write(f'select {atoms_to_select}\n')  # Select the atom
                                 f.write('color red sel\n')  # Color the selected atom red
-                                #f.write('surf sel\n')  # Color the selected atom red
+                                f.write('surf\n')
+                                f.write('surf sel\n')  # Color the selected atom red
+                                f.write('surf')
                                 
                                 f.flush()
 

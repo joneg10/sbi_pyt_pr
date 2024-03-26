@@ -85,8 +85,8 @@ class StructureAnalysis:
                     
                     # Iterate over the atoms in the ligand
                     for atom in residue.get_atoms():
-                        # Find all atoms within 8A of the ligand atom
-                        nearby = self.ns.search(atom.coord, 8)
+                        # Find all atoms within 6.2 A of the ligand atom
+                        nearby = self.ns.search(atom.coord, 6.2)
                         # Filter atoms that belong to the protein
                         nearby_protein_atoms = [a for a in nearby if a.get_parent().get_resname() in self.standard_residues]
                     

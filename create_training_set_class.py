@@ -14,7 +14,7 @@ Methods:
 from Bio.PDB import *
 import pandas as pd
 import matplotlib.pyplot as plt 
-from copy_of_classes import *
+from environment_classes import *
 import os
 from Bio.PDB.SASA import ShrakeRupley
 import sys

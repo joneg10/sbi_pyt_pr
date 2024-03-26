@@ -12,7 +12,7 @@ from torchviz import make_dot
 
 
 # Load the training set
-training_set = pd.read_parquet('../trainingSet_20240325.parquet')
+training_set = pd.read_parquet('../trainingSet_20240326.parquet')
 
 
 # Set "is_lbs" as the last column
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # Define early stopping parameters
 
     best_loss = float('inf')
-    patience = 10
+    patience = 5
     early_stop_counter = 0
 
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     model.state_dict()
 
     # Save the model
-    torch.save(model.state_dict(), "neural_network_2503_1988_pdbs_martin_adagrad.pytorch")
+    torch.save(model.state_dict(), "neural_network_2603_1988_pdbs_6.2A.pytorch")
 
 
 
@@ -139,23 +139,23 @@ if __name__ == "__main__":
 
     ## Load neural network model from state dict and assess model
 
-    # Assuming y_test are 
+    
 
-    model = nn.Sequential(
-        nn.Linear(50, 74),
-        nn.ReLU(),
-        nn.Linear(74, 50),
-        nn.ReLU(),
-        nn.Linear(50, 25),
-        nn.ReLU(),
-        nn.Linear(25, 1),
-        nn.Sigmoid()
-    )
+    # model = nn.Sequential(
+    #     nn.Linear(50, 74),
+    #     nn.ReLU(),
+    #     nn.Linear(74, 50),
+    #     nn.ReLU(),
+    #     nn.Linear(50, 25),
+    #     nn.ReLU(),
+    #     nn.Linear(25, 1),
+    #     nn.Sigmoid()
+    # )
 
 
 
-    model.load_state_dict(torch.load("neural_network_2503_1988_pdbs_martin.pytorch"))
-    model.state_dict()
+    # model.load_state_dict(torch.load("neural_network_2503_1988_pdbs_martin.pytorch"))
+    # model.state_dict()
     prediction = model(X_test_normalized)
 
     # Compute the ROC curve

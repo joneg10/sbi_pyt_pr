@@ -1,6 +1,5 @@
 from create_training_set_class import TrainingSet
 import pandas as pd
-
 ###############################################
 ### Creation of formatting training dataset ###
 ###############################################
@@ -21,6 +20,6 @@ training_set.fillna(0, inplace=True)
 training_set["is_lbs"] = training_set.pop("is_lbs")
 
 # Save the training set to a parquet file
-output_file = '../trainingSet_20240325.parquet'
+output_file = '../trainingSet_20240326.parquet'
  
 training_set.to_parquet(output_file)
