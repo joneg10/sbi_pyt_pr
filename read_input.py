@@ -1,3 +1,4 @@
+
 import argparse
 from environment_classes import *
 import pandas as pd
@@ -9,7 +10,7 @@ import sys
 from algorithm import mean, std, model
 import os 
 import requests
-
+import time
 if __name__ == "__main__":
 
         parser = argparse.ArgumentParser(description='Process input PDB')
@@ -18,7 +19,7 @@ if __name__ == "__main__":
                         dest="pdb_file",
                         action="store",
                         required=True,
-                        help="Input files: can be an individual file or a directory containing multiple pdb files")
+                        help="Input files: can be an individual file, a directory containing multiple pdb files, or a PDB ID that will be downloaded from PDB using the format web/PDB_ID.")
 
         parser.add_argument('-c', '--chimera',
                         dest="open_chimera",
@@ -42,7 +43,8 @@ if __name__ == "__main__":
 
         
 
-        model.load_state_dict(torch.load("neural_network_2603_1988_pdbs_6.2A.pytorch"))
+        neural_network_path = os.path.abspath("neural_network_2603_1988_pdbs_6.2A.pytorch")
+        model.load_state_dict(torch.load(neural_network_path))
 
 
 
@@ -61,6 +63,7 @@ if __name__ == "__main__":
                         None
                 """
 
+                sys.stdout.write(f"========File: {input_pdb}========\n\n")
 
                 input_structure = StructureAnalysis(pdb_file = input_pdb)
 
@@ -90,12 +93,14 @@ if __name__ == "__main__":
 
                 residues_output = sorted(residues_output, key=lambda x: int(x[3:]))
 
+                # output
 
+                
                 if args.output_atoms:
                         if args.output_file:
                                 with open(args.output_file, "w") as f:
                                         f.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n\n")
-                                        for atom in prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values:
+                                        for atom in prediction_codes[prediction_codes["prediction"] > 0.4]["code"].values:
                                                 f.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
 
                         else:
@@ -130,7 +135,8 @@ if __name__ == "__main__":
                                 f.flush()
 
                                 # Run Chimera with the temporary file
-                                subprocess.run(['chimera', f.name])
+                                subprocess.Popen(['chimera', f.name])
+                                time.sleep(5)
 
         
         # if args.pdb_file is file, predict file 
@@ -159,5 +165,6 @@ if __name__ == "__main__":
 
         else:
                 for pdb_file in os.listdir(args.pdb_file):
-                        predict_binding(pdb_file)
+                        
+                        predict_binding(args.pdb_file + "/" + pdb_file)
 

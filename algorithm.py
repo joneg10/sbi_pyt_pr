@@ -141,21 +141,21 @@ if __name__ == "__main__":
 
     
 
-    # model = nn.Sequential(
-    #     nn.Linear(50, 74),
-    #     nn.ReLU(),
-    #     nn.Linear(74, 50),
-    #     nn.ReLU(),
-    #     nn.Linear(50, 25),
-    #     nn.ReLU(),
-    #     nn.Linear(25, 1),
-    #     nn.Sigmoid()
-    # )
+    model = nn.Sequential(
+        nn.Linear(50, 74),
+        nn.ReLU(),
+        nn.Linear(74, 50),
+        nn.ReLU(),
+        nn.Linear(50, 25),
+        nn.ReLU(),
+        nn.Linear(25, 1),
+        nn.Sigmoid()
+    )
 
 
 
-    # model.load_state_dict(torch.load("neural_network_2503_1988_pdbs_martin.pytorch"))
-    # model.state_dict()
+    model.load_state_dict(torch.load("neural_network_2603_1988_pdbs_6.2A.pytorch"))
+    model.state_dict()
     prediction = model(X_test_normalized)
 
     # Compute the ROC curve
@@ -166,13 +166,12 @@ if __name__ == "__main__":
 
     # Plot the ROC curve
     plt.figure()
-    plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot(fpr, tpr, color='black', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
     plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
     plt.show()
 
@@ -183,7 +182,7 @@ if __name__ == "__main__":
     with torch.no_grad():
         Y_pred_test = model(torch.tensor(X_test_normalized, dtype=torch.float32))
         test_loss = loss_fn(Y_pred_test, torch.tensor(Y_test, dtype=torch.float32).reshape(-1, 1))
-        Y_pred_test_binary = (Y_pred_test >= 0.5).float() # threshold ¿?¿?¿?¿
+        Y_pred_test_binary = (Y_pred_test >= 0.4).float() # threshold ¿?¿?¿?¿
         report = classification_report(Y_test, Y_pred_test_binary)
         print(report)
 
