@@ -99,6 +99,7 @@ if __name__ == "__main__":
                 if args.output_atoms:
                         if args.output_file:
                                 with open(args.output_file, "w") as f:
+                                        f.write(f"========File: {input_pdb}========\n\n")
                                         f.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n\n")
                                         for atom in prediction_codes[prediction_codes["prediction"] > 0.4]["code"].values:
                                                 f.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
@@ -165,6 +166,6 @@ if __name__ == "__main__":
 
         else:
                 for pdb_file in os.listdir(args.pdb_file):
-                        
-                        predict_binding(args.pdb_file + "/" + pdb_file)
+                        if pdb_file[-4:] == ".pdb":
+                                predict_binding(args.pdb_file + "/" + pdb_file)
 
