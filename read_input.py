@@ -98,7 +98,7 @@ if __name__ == "__main__":
                 
                 if args.output_atoms:
                         if args.output_file:
-                                with open(args.output_file, "w") as f:
+                                with open(args.output_file, "a") as f:
                                         f.write(f"========File: {input_pdb}========\n\n")
                                         f.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n\n")
                                         for atom in prediction_codes[prediction_codes["prediction"] > 0.4]["code"].values:
@@ -111,7 +111,8 @@ if __name__ == "__main__":
 
                 else:
                         if args.output_file:
-                                with open(args.output_file, "w") as f:
+                                with open(args.output_file, "a") as f:
+                                        f.write(f"========File: {input_pdb}========\n\n")
                                         f.write(f"RESIDUE:\n\n")
                                         for residue in residues_output:
                                                 f.write(residue+"\n")
