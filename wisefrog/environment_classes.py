@@ -14,7 +14,7 @@ Methods:
 
 from Bio.PDB import PDBParser, NeighborSearch
 from Bio.PDB.SASA import ShrakeRupley
-import atom_dict
+import wisefrog.atom_dict
 import math
 import random
 
@@ -180,8 +180,8 @@ class StructureAnalysis:
                                 atom_counts["sasa"] += nearby_atom.sasa
 
                                 # Calculate the features of the atom
-                                if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
-                                    atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
+                                if nearby_atom.get_id() in list(wisefrog.atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
+                                    atom_counts[wisefrog.atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
 
                                 # include atoms from the peptide bond 
                                     
@@ -195,8 +195,8 @@ class StructureAnalysis:
                                     atom_counts["aromatic"] += 1
 
                                 resname = nearby_atom.get_parent().get_resname().capitalize()
-                                if resname in atom_dict.charges and nearby_atom.get_id() in atom_dict.charges[resname]:
-                                    atom_counts["charge"] += atom_dict.charges[resname][nearby_atom.get_id()]
+                                if resname in wisefrog.atom_dict.charges and nearby_atom.get_id() in wisefrog.atom_dict.charges[resname]:
+                                    atom_counts["charge"] += wisefrog.atom_dict.charges[resname][nearby_atom.get_id()]
 
                             atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}
 
@@ -280,9 +280,9 @@ class StructureAnalysis:
                         atom_counts["sasa"] += nearby_atom.sasa
 
                         # Calculate the features of the atom
-                        if nearby_atom.get_id() in list(atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
+                        if nearby_atom.get_id() in list(wisefrog.atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()].keys()):
                                 # This is a counter for each atom is it is aliphatic, aromatic, donor, acceptor or donor_acceptor.
-                                atom_counts[atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
+                                atom_counts[wisefrog.atom_dict.characteristics[nearby_atom.get_parent().get_resname().capitalize()][nearby_atom.get_id()]] += 1
 
 
                         if nearby_atom.get_id() == "N":
@@ -297,8 +297,8 @@ class StructureAnalysis:
                     # Calculate charges:
                         
                         resname = nearby_atom.get_parent().get_resname().capitalize()
-                        if resname in atom_dict.charges and nearby_atom.get_id() in atom_dict.charges[resname]:
-                            atom_counts["charge"] += atom_dict.charges[resname][nearby_atom.get_id()]
+                        if resname in wisefrog.atom_dict.charges and nearby_atom.get_id() in wisefrog.atom_dict.charges[resname]:
+                            atom_counts["charge"] += wisefrog.atom_dict.charges[resname][nearby_atom.get_id()]
                        
                        
                         atom_proportions = {atom_id: count / atom_counter for atom_id, count in atom_counts.items()}

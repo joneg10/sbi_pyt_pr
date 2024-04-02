@@ -12,4 +12,12 @@ setup(
             'wisefrog = wisefrog.wisefrog:main',
         ],
     },
+    install_requires=[
+        'pandas==2.2.1',
+        'torch==2.2.1',
+        'requests==2.31.0',
+        'argparse==1.1',
+        'Bio',
+    ], 
+    python_requires='>=3.9',
 )
