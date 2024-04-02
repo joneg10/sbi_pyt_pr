@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 import argparse
 from environment_classes import *
@@ -11,6 +12,8 @@ from algorithm import mean, std, model
 import os 
 import requests
 import time
+import pkg_resources
+
 if __name__ == "__main__":
 
         parser = argparse.ArgumentParser(description='Process input PDB')
@@ -43,7 +46,7 @@ if __name__ == "__main__":
 
         
 
-        neural_network_path = os.path.abspath("neural_network_2603_1988_pdbs_6.2A.pytorch")
+        neural_network_path = pkg_resources.resource_filename(__name__,"neural_network_2603_1988_pdbs_6.2A.pytorch")
         model.load_state_dict(torch.load(neural_network_path))
 
 
