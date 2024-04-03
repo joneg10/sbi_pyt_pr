@@ -15,6 +15,12 @@ def main():
         import time
         import pkg_resources
 
+
+
+
+
+        # mean from the training test
+
         mean = torch.tensor([3.4002e+01, 2.5525e+00, 1.8183e-01, 2.1489e-01, 1.6584e-01, 1.5862e-01,
         1.5208e-02, 9.9080e-04, 6.9211e-02, 6.2484e-01, 4.7259e-03, 1.7122e-01,
         6.0211e-03, 1.7709e-01, 2.6683e-02, 6.7682e-03, 2.1887e-02, 1.1795e-01,
@@ -25,6 +31,8 @@ def main():
         3.6518e-03, 2.4850e-03, 1.9137e-03, 1.9424e-03, 1.8992e-03, 1.8830e-03,
         1.9270e-03, 1.3970e-04])
 
+        # standard deviation from the training test 
+
         std = torch.tensor([2.1407e+01, 2.8410e+00, 9.9229e-02, 8.5333e-02, 4.4860e-02, 4.7455e-02,
         1.9999e-02, 2.3514e-02, 3.0145e-02, 8.9659e-02, 1.1212e-02, 4.5903e-02,
         1.3150e-02, 5.0138e-02, 2.6208e-02, 1.3145e-02, 2.3256e-02, 2.9567e-02,
@@ -34,6 +42,8 @@ def main():
         1.4208e-02, 1.3194e-02, 1.3462e-02, 1.3644e-02, 1.3376e-02, 1.3112e-02,
         1.0064e-02, 9.1373e-03, 6.8294e-03, 7.0227e-03, 6.9380e-03, 6.6800e-03,
         6.8912e-03, 2.1643e-03])
+
+        # create empty model to load it with the parameters from the trained model
 
         model = nn.Sequential(
         nn.Linear(50, 74),
@@ -46,7 +56,16 @@ def main():
         nn.Sigmoid()
         )
 
-        parser = argparse.ArgumentParser(description='Process input PDB')
+
+        # load model
+
+
+        neural_network_path = pkg_resources.resource_filename(__name__,"neural_network_2603_1988_pdbs_6.2A.pytorch")
+        model.load_state_dict(torch.load(neural_network_path))
+
+
+        # parse arguments
+        parser = argparse.ArgumentParser(description='Process the input PDB that is provided by the user, and show the ligand binding residues, atoms, and/or 3D visualization with Chimera.')
 
         parser.add_argument('-f', '--file',
                         dest="pdb_file",
@@ -72,12 +91,7 @@ def main():
         args = parser.parse_args()
 
 
-        # load model
 
-        
-
-        neural_network_path = pkg_resources.resource_filename(__name__,"neural_network_2603_1988_pdbs_6.2A.pytorch")
-        model.load_state_dict(torch.load(neural_network_path))
 
 
 
@@ -102,7 +116,10 @@ def main():
 
                 environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
 
+                # drop columns that are not in the training set
+
                 columns_to_drop = [col for col in environment_df.columns if col not in StructureAnalysis.column_names and col != "residue"]
+
 
                 environment_df.drop(columns_to_drop, axis=1, inplace=True)
 
@@ -159,6 +176,9 @@ def main():
 
                 # Open Chimera
                 if args.open_chimera:
+                        sys.stdout.write("You can use this selection in chimera to visualize the binding atoms:\n\n")
+                        sys.stdout.write(atoms_to_select + "\n\n")
+
                         with tempfile.NamedTemporaryFile(mode='w', delete=True, suffix='.cmd', dir=".") as f:
                                 f.write(f'open {input_pdb}\n')  # Open your PDB file
                                 f.write(f'select {atoms_to_select}\n')  # Select the atom
@@ -170,8 +190,12 @@ def main():
                                 f.flush()
 
                                 # Run Chimera with the temporary file
-                                subprocess.Popen(['chimera', f.name])
-                                time.sleep(5)
+                                try:
+                                        subprocess.Popen(['chimera', f.name])
+                                        time.sleep(5)
+                                        
+                                except FileNotFoundError:
+                                        print("Chimera is not installed. Please install Chimera to visualize the binding atoms.")
 
         
         # if args.pdb_file is file, predict file 
@@ -179,19 +203,22 @@ def main():
         if args.pdb_file[0:4] == "web/":
 
                 URL = "https://files.rcsb.org/download/" + args.pdb_file[4:8] + ".pdb"
-                response = requests.get(URL)
                 
-                if response.status_code == 200:
-                        
+                response = requests.get(URL)
+             
+                if response.status_code == 404:
+                        print(f"Error: The PDB file {args.pdb_file[4:8]} was not found.")
+                else:
                         sys.stdout.write(f"Downloading from {URL}\n")
                         
                         with open(args.pdb_file[4:8]+".pdb", "w") as structure:
                                 structure.write(response.text)
                         
-                                predict_binding(structure.name)
+                        predict_binding(structure.name)
                         
-                else:
-                        sys.stdout.write(f"The structure {args.pdb_file[4:8]} could not be retrieved from PDB\n")
+                        os.remove(structure.name)
+        
+
 
 
 
@@ -202,6 +229,4 @@ def main():
                 for pdb_file in os.listdir(args.pdb_file):
                         if pdb_file[-4:] == ".pdb":
                                 predict_binding(args.pdb_file + "/" + pdb_file)
-
-
 
