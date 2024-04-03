@@ -6,6 +6,35 @@ We decided on the “wisefrog” name for many reasons. The term “Wise” conv
 
 It has been developed by Jone Gutiérrez Díez and Martín Suárez Álvarez
 
+## Repository structure
+
+
+├── 1N07_structure.png
+├── dist
+│   └── wisefrog-0.1.tar.gz
+├── LICENSE
+├── README.md
+├── setup.py
+├── TUTORIAL.jpg
+├── wisefrog
+│   ├── algorithm.py
+│   ├── atom_dict.py
+│   ├── create_training_set_class.py
+│   ├── create_training_set_script.py
+│   ├── environment_classes.py
+│   ├── __init__.py
+│   ├── neural_network_2603_1988_pdbs_6.2A.pytorch
+│   └── wisefrog.py
+└── wisefrog.egg-info
+    ├── dependency_links.txt
+    ├── entry_points.txt
+    ├── PKG-INFO
+    ├── requires.txt
+    ├── SOURCES.txt
+    └── top_level.txt
+
+3 directories, 20 files
+
 ## Tutorial
 
 As this tutorial focuses on a Python-based model, it will comprehensively cover its usage, starting from basic operations such as program initialization and simple output generation, all the way to exploring its full potential in handling more complex tasks and functionalities
