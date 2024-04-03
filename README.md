@@ -8,7 +8,7 @@ It has been developed by Jone Gutiérrez Díez and Martín Suárez Álvarez
 
 ## Repository structure
 
-
+```
 ├── 1N07_structure.png
 ├── dist
 │   └── wisefrog-0.1.tar.gz
@@ -34,6 +34,7 @@ It has been developed by Jone Gutiérrez Díez and Martín Suárez Álvarez
     └── top_level.txt
 
 3 directories, 20 files
+```
 
 ## Tutorial
 
