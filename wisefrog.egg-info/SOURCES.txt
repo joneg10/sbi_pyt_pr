@@ -1,0 +1,17 @@
+LICENSE
+README.md
+setup.py
+wisefrog/__init__.py
+wisefrog/algorithm.py
+wisefrog/atom_dict.py
+wisefrog/create_training_set_class.py
+wisefrog/create_training_set_script.py
+wisefrog/environment_classes.py
+wisefrog/neural_network_2603_1988_pdbs_6.2A.pytorch
+wisefrog/wisefrog.py
+wisefrog.egg-info/PKG-INFO
+wisefrog.egg-info/SOURCES.txt
+wisefrog.egg-info/dependency_links.txt
+wisefrog.egg-info/entry_points.txt
+wisefrog.egg-info/requires.txt
+wisefrog.egg-info/top_level.txt
