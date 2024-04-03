@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np 
 import torch
 import torch.nn as nn
 import pandas as pd
@@ -40,6 +40,17 @@ std = torch.std(X_train, dim=0)
 
 X_train_normalized = (X_train - mean) / std
 X_test_normalized = (X_test - mean) / std
+
+# Save X_train, X_test, Y_train, Y_test as parquet files
+X_train_df = pd.DataFrame(X_train_normalized.numpy())
+X_test_df = pd.DataFrame(X_test_normalized.numpy())
+Y_train_df = pd.DataFrame(Y_train.numpy())
+Y_test_df = pd.DataFrame(Y_test.numpy())
+
+X_train_df.to_parquet('../X_train.parquet')
+X_test_df.to_parquet('../X_test.parquet')
+Y_train_df.to_parquet('../Y_train.parquet')
+Y_test_df.to_parquet('../Y_test.parquet')
 
 
 
