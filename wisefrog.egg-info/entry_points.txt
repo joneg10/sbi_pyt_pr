@@ -1,2 +1,0 @@
-[console_scripts]
-wisefrog = wisefrog.wisefrog:main
