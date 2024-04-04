@@ -17,6 +17,15 @@ def main():
 
 
 
+        # create class to raise exception when file is not PDB
+
+        class NotPDBFile(Exception):
+
+                def __init__(self, file):
+                        self.file = file
+
+                def __str__(self):
+                        return f"{self.file} is not a PDB file and could not be parsed."
 
 
         # mean from the training test
@@ -112,90 +121,100 @@ def main():
 
                 sys.stdout.write(f"========File: {input_pdb}========\n\n")
 
-                input_structure = StructureAnalysis(pdb_file = input_pdb)
-
-                environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
-
-                # drop columns that are not in the training set
-
-                columns_to_drop = [col for col in environment_df.columns if col not in StructureAnalysis.column_names and col != "residue"]
+                try: 
+                        input_structure = StructureAnalysis(pdb_file = input_pdb)
 
 
-                environment_df.drop(columns_to_drop, axis=1, inplace=True)
-
-                residue_col = environment_df.pop("residue")
-
-                X_to_predict = torch.tensor(environment_df.values, dtype=torch.float32)
-                X_to_predict_normalized = (X_to_predict - mean) / std
-
-                ### predict
-
-
-                # prediction
-
-                prediction = model(X_to_predict_normalized) 
-
-                prediction_codes = pd.DataFrame({'code': environment_df.index,
-                                                'prediction': prediction.detach().numpy().flatten(),
-                                                'residue': residue_col})
-
-                residues_output = set(prediction_codes[prediction_codes["prediction"] > 0.5]["residue"].values)
-
-                residues_output = sorted(residues_output, key=lambda x: int(x[3:]))
-
-                # output
-
+                except IndexError:
+                        raise NotPDBFile(input_pdb)
                 
-                if args.output_atoms:
-                        if args.output_file:
-                                with open(args.output_file, "a") as f:
-                                        f.write(f"========File: {input_pdb}========\n\n")
-                                        f.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n\n")
-                                        for atom in prediction_codes[prediction_codes["prediction"] > 0.4]["code"].values:
-                                                f.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
-
-                        else:
-                                sys.stdout.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n")
-                                for atom in prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values:
-                                        sys.stdout.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
-
+                except ValueError:
+                        raise NotPDBFile(input_pdb)
+                
                 else:
-                        if args.output_file:
-                                with open(args.output_file, "a") as f:
-                                        f.write(f"========File: {input_pdb}========\n\n")
-                                        f.write(f"RESIDUE:\n\n")
-                                        for residue in residues_output:
-                                                f.write(residue+"\n")
+
+                        environment_df = pd.DataFrame.from_dict(input_structure.get_input_environments(), orient='index')
+
+                        # drop columns that are not in the training set
+
+                        columns_to_drop = [col for col in environment_df.columns if col not in StructureAnalysis.column_names and col != "residue"]
+
+
+                        environment_df.drop(columns_to_drop, axis=1, inplace=True)
+
+                        residue_col = environment_df.pop("residue")
+
+                        X_to_predict = torch.tensor(environment_df.values, dtype=torch.float32)
+                        X_to_predict_normalized = (X_to_predict - mean) / std
+
+                        ### predict
+
+
+                        # prediction
+
+                        prediction = model(X_to_predict_normalized) 
+
+                        prediction_codes = pd.DataFrame({'code': environment_df.index,
+                                                        'prediction': prediction.detach().numpy().flatten(),
+                                                        'residue': residue_col})
+
+                        residues_output = set(prediction_codes[prediction_codes["prediction"] > 0.5]["residue"].values)
+
+                        residues_output = sorted(residues_output, key=lambda x: int(x[3:]))
+
+                        # output
+
+                        
+                        if args.output_atoms:
+                                if args.output_file:
+                                        with open(args.output_file, "a") as f:
+                                                f.write(f"========File: {input_pdb}========\n\n")
+                                                f.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n\n")
+                                                for atom in prediction_codes[prediction_codes["prediction"] > 0.4]["code"].values:
+                                                        f.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
+
+                                else:
+                                        sys.stdout.write("ATOM".ljust(0) + "RESIDUE".rjust(16) + "\n")
+                                        for atom in prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values:
+                                                sys.stdout.write(atom.ljust(0) + prediction_codes[prediction_codes["code"] == atom]["residue"].values[0].rjust(20-len(atom))+ "\n")
+
                         else:
-                                sys.stdout.write(f"RESIDUE:\n\n")
-                                for residue in residues_output:
-                                        sys.stdout.write(residue+"\n")
+                                if args.output_file:
+                                        with open(args.output_file, "a") as f:
+                                                f.write(f"========File: {input_pdb}========\n\n")
+                                                f.write(f"RESIDUE:\n\n")
+                                                for residue in residues_output:
+                                                        f.write(residue+"\n")
+                                else:
+                                        sys.stdout.write(f"RESIDUE:\n\n")
+                                        for residue in residues_output:
+                                                sys.stdout.write(residue+"\n")
 
 
-                atoms_to_select = str(list(prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values)).replace("'", "").replace("[", "").replace("]", "").replace(" ", "")
+                        atoms_to_select = str(list(prediction_codes[prediction_codes["prediction"] > 0.5]["code"].values)).replace("'", "").replace("[", "").replace("]", "").replace(" ", "")
 
-                # Open Chimera
-                if args.open_chimera:
-                        sys.stdout.write("You can use this selection in chimera to visualize the binding atoms:\n\n")
-                        sys.stdout.write(atoms_to_select + "\n\n")
+                        # Open Chimera
+                        if args.open_chimera:
+                                sys.stdout.write("You can use this selection in chimera to visualize the binding atoms:\n\n")
+                                sys.stdout.write(atoms_to_select + "\n\n")
 
-                        with tempfile.NamedTemporaryFile(mode='w', delete=True, suffix='.cmd', dir=".") as f:
-                                f.write(f'open {input_pdb}\n')  # Open your PDB file
-                                f.write(f'select {atoms_to_select}\n')  # Select the atom
-                                f.write('color red sel\n')  # Color the selected atom red
-                                f.write('surf\n')
-                                f.write('surf sel\n')  # Color the selected atom red
-                                f.write('surf')
-                                
-                                f.flush()
-
-                                # Run Chimera with the temporary file
-                                try:
-                                        subprocess.Popen(['chimera', f.name])
-                                        time.sleep(5)
+                                with tempfile.NamedTemporaryFile(mode='w', delete=True, suffix='.cmd', dir=".") as f:
+                                        f.write(f'open {input_pdb}\n')  # Open your PDB file
+                                        f.write(f'select {atoms_to_select}\n')  # Select the atom
+                                        f.write('color red sel\n')  # Color the selected atom red
+                                        f.write('surf\n')
+                                        f.write('surf sel\n')  # Color the selected atom red
+                                        f.write('surf')
                                         
-                                except FileNotFoundError:
-                                        print("Chimera is not installed. Please install Chimera to visualize the binding atoms.")
+                                        f.flush()
+
+                                        # Run Chimera with the temporary file
+                                        try:
+                                                subprocess.Popen(['chimera', f.name])
+                                                time.sleep(5)
+                                                
+                                        except FileNotFoundError:
+                                                print("Chimera is not installed. Please install Chimera to visualize the binding atoms.")
 
         
         # if args.pdb_file is file, predict file 
